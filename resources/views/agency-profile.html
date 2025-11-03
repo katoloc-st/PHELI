@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+   
+
+<head>
+      <!-- Google Fonts: Barlow -->
+      <link href="https://fonts.googleapis.com/css?family=Barlow:400,500,600,700&display=swap" rel="stylesheet">
+      <style>
+         body, html {
+            font-family: 'Barlow', Arial, Helvetica, sans-serif !important;
+         }
+      </style>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+      <meta name="description" content="Webartinfo">
+      <meta name="author" content="Webartinfo">
+      <title>Manland - Bootstrap Light Real Estate HTML Template</title>
+      <!-- Favicon Icon -->
+      <link rel="icon" type="image/png" href="img/favicon.png">
+      <!-- Bootstrap core CSS -->
+      <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+      <!-- Material Design Icons -->
+      <link href="vendor/icons/css/materialdesignicons.min.css" media="all" rel="stylesheet" type="text/css" />
+      <!-- Select2 CSS -->
+      <link href="vendor/select2/css/select2-bootstrap.css" />
+      <link href="vendor/select2/css/select2.min.css" rel="stylesheet" />
+      <!-- Custom styles for this template -->
+      <link href="css/style.css" rel="stylesheet">
+
+   </head>
+   <body>
+      <!-- Navbar -->
+      <header>
+         <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <div class="container">
+               <a class="navbar-brand text-success logo" href="index.html">
+               <img class="img-fluid" src="img/logo.svg" alt="">
+               </a>
+               <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse"
+                  data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false"
+                  aria-label="Toggle navigation">
+               <span class="navbar-toggler-icon"></span>
+               </button>
+               <div class="collapse navbar-collapse" id="navbarResponsive">
+                  <ul class="navbar-nav ml-auto mt-2 mt-lg-0">
+                     <li class="nav-item">
+                        <a class="nav-link" href="index.html">
+                        Trang chủ
+                        </a>
+                     </li>
+                     <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownPortfolio" data-toggle="dropdown"
+                           aria-haspopup="true" aria-expanded="false">
+                        Bài đăng
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="navbarDropdownPortfolio">
+                           <a class="dropdown-item" href="properties-grid.html">Cơ sở phế liệu</a>
+                           <a class="dropdown-item" href="properties-grid.html">Doanh nghiệp</a>
+                        </div>
+                     </li>
+                     <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownPortfolio" data-toggle="dropdown"
+                           aria-haspopup="true" aria-expanded="false">
+                        Người bán
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="navbarDropdownPortfolio">
+                           <a class="dropdown-item" href="agency-list.html">Cơ sở phế liệu</a>
+                           <a class="dropdown-item" href="business-list.html">Doanh nghiệp xanh</a>
+                        </div>
+                     </li>
+                     <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownPortfolio" data-toggle="dropdown"
+                           aria-haspopup="true" aria-expanded="false">
+                        Hồ sơ
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="navbarDropdownPortfolio">
+                           <a class="dropdown-item" href="user-profile.html">Hồ sơ cá nhân</a>
+                           <a class="dropdown-item" href="social-profiles.html">Mạng xã hội</a>
+                           <a class="dropdown-item" href="my-properties.html">Bài đăng của tôi</a>
+                           <a class="dropdown-item" href="add-property.html">Thêm bài đăng</a>
+                        </div>
+                     </li>
+                  </ul>
+                  <div class="my-2 my-lg-0">
+                     <ul class="list-inline main-nav-right">
+                        <li class="list-inline-item">
+                           <a class="btn btn-link btn-sm" href="login.html">Sign In</a>
+                        </li>
+                        <li class="list-inline-item">
+                           <a class="btn btn-success btn-sm" href="register.html">Sign Up</a>
+                        </li>
+                     </ul>
+                  </div>
+               </div>
+            </div>
+         </nav>
+      </header>
+      <!-- End Navbar -->
+      <!-- Inner Header -->
+      <section class="section-padding bg-dark inner-header">
+         <div class="container">
+            <div class="row">
+               <div class="col-md-12 text-center">
+                  <h1 class="mt-0 mb-3 text-white" id="agency-title">Hồ sơ công ty</h1>
+                  <div class="breadcrumbs">
+                     <p class="mb-0 text-white"><a class="text-white" href="index.html">Home</a>  /  <span class="text-success" id="agency-breadcrumb">Hồ sơ công ty</span></p>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </section>
+      <!-- End Inner Header -->
+      <!-- Agency Profile -->
+      <section class="section-padding">
+             <div class="container" id="agency-profile-content">
+                <!-- Nội dung động sẽ được render ở đây -->
+             </div>
+         <script>
+         // Dữ liệu mẫu cho từng công ty
+         const agencyData = {
+            vietduc: {
+               name: 'Phế Liệu Việt Đức',
+               img: 'img/company/VietDuc.jpg',
+               address: 'TP.HCM, Hà Nội, Bình Dương,...',
+               desc: 'Công ty thu mua phế liệu giá cao TPHCM và toàn quốc Việt Đức mua hàng tận nơi: chuyên mua phế liệu sắt, phế liệu gang, phế liệu hợp kim, thu mua mũi khoan, dao phay ngon, thép gió, phế liệu Niken, phế liệu thiếc, xi mạ bạc, xi mạ vàng, thuỷ tinh, giấy vụn, xác nhà cũ, đồ gia dụng, linh kiện điện tử, vải tồn thanh lý, mua thiết bị máy móc, công ty thanh lý.',
+               phone: '(+91) 123 456 7890',
+               email: 'yoursite@gmail.com',
+               website: 'www.Webartinfo.com',
+               posts: [
+                  {
+                     title: 'Thu mua phế liệu sắt giá cao',
+                     img: 'img/list/1.png',
+                     location: 'TP.HCM',
+                     price: '12.000đ/kg',
+                     content: 'Chuyên thu mua phế liệu sắt công trình, nhà xưởng, giá cao tận nơi.'
+                  },
+                  {
+                     title: 'Thu mua hợp kim, gang',
+                     img: 'img/list/2.png',
+                     location: 'Bình Dương',
+                     price: '15.000đ/kg',
+                     content: 'Nhận thu mua hợp kim, gang, thép gió, giá tốt, thanh toán nhanh.'
+                  }
+               ]
+            },
+            phelieuvn: {
+               name: 'Phế Liệu VN',
+               img: 'img/company/phelieuvn.png',
+               address: 'TP.HCM, Bình Dương, Đồng Nai, Long An, Vũng Tàu, Tây Ninh, Bình Phước, Tiền Giang, Bình Thuận, Đà Nẵng, Hà Nội',
+               desc: 'Thu mua đa dạng các loại phế liệu kim loại, phi kim, thiết bị, linh kiện, máy móc thanh lý từ công trình, nhà kho, xưởng sản xuất.',
+               phone: '(+91) 123 456 7890',
+               email: 'rodeorealty@gmail.com',
+               website: 'www.Webartinfo.com',
+               posts: [
+                  {
+                     title: 'Thu mua phế liệu đồng',
+                     img: 'img/list/3.png',
+                     location: 'Đồng Nai',
+                     price: '90.000đ/kg',
+                     content: 'Thu mua đồng cáp, đồng đỏ, đồng vàng, giá cao.'
+                  },
+                  {
+                     title: 'Thu mua thiết bị điện tử',
+                     img: 'img/list/4.png',
+                     location: 'TP.HCM',
+                     price: 'Thỏa thuận',
+                     content: 'Nhận thu mua linh kiện, thiết bị điện tử cũ, máy móc thanh lý.'
+                  }
+               ]
+            },
+            vietphat: {
+               name: 'Phế Liệu Việt Phát',
+               img: 'img/company/Logo-phe-lieu-viet-phat-1024x724.png',
+               address: 'Cần Thơ, Long An',
+               desc: 'Phế Liệu Việt Phát là đơn vị uy tín chuyên thu mua phế liệu trên toàn quốc, đặc biệt tại khu vực miền Tây như Cần Thơ, Long An,…',
+               phone: '(+91) 123 456 7890',
+               email: 'plvietphat@gmail.com',
+               website: 'www.Webartinfo.com',
+               posts: [
+                  {
+                     title: 'Thu mua phế liệu inox',
+                     img: 'img/list/5.png',
+                     location: 'Cần Thơ',
+                     price: '30.000đ/kg',
+                     content: 'Thu mua inox công trình, nhà máy, giá cao.'
+                  }
+               ]
+            },
+            quangdat: {
+               name: 'Phế Liệu Quang Đạt',
+               img: 'img/company/logo-phe-lieu-quang-dat.jpg',
+               address: 'TP.HCM',
+               desc: 'Dịch vụ thu mua phế liệu giá cao, tận nơi, chuyên nghiệp và uy tín với mức giá tốt nhất.',
+               phone: '(+91) 123 456 7890',
+               email: 'quangdat@gmail.com',
+               website: 'www.Webartinfo.com',
+               posts: [
+                  {
+                     title: 'Thu mua phế liệu nhôm',
+                     img: 'img/list/6.png',
+                     location: 'TP.HCM',
+                     price: '40.000đ/kg',
+                     content: 'Thu mua nhôm phế liệu, nhôm công trình, giá tốt.'
+                  }
+               ]
+            },
+            tuanphat: {
+               name: 'Phế Liệu Tuấn Phát',
+               img: 'img/company/TuanPhat.jpg',
+               address: 'TP.HCM',
+               desc: 'Tuấn Phát mua nhiều loại phế liệu như: Sắt thép, Nhôm, Đồng, Inox, Gang, Nhựa, Chì Kẽm, phế liệu điện tử…',
+               phone: '(+91) 123 456 7890',
+               email: 'tuanphat@gmail.com',
+               website: 'www.Webartinfo.com',
+               posts: [
+                  {
+                     title: 'Thu mua phế liệu sắt thép',
+                     img: 'img/list/1.png',
+                     location: 'TP.HCM',
+                     price: '12.000đ/kg',
+                     content: 'Thu mua sắt thép công trình, nhà xưởng, giá cao.'
+                  }
+               ]
+            }
+         };
+
+         // Lấy id từ query string
+         function getAgencyId() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('id') || 'vietduc';
+         }
+
+         function renderAgencyProfile() {
+            const id = getAgencyId();
+            const data = agencyData[id];
+            if (!data) {
+               document.getElementById('agency-profile-content').innerHTML = '<div class="alert alert-danger">Không tìm thấy công ty!</div>';
+               document.getElementById('agency-title').innerText = 'Không tìm thấy công ty';
+               document.getElementById('agency-breadcrumb').innerText = 'Không tìm thấy công ty';
+               return;
+            }
+            document.getElementById('agency-title').innerText = data.name;
+            document.getElementById('agency-breadcrumb').innerText = data.name;
+            document.getElementById('agency-profile-content').innerHTML = `
+            <div class="row">
+               <div class="col-lg-3 col-md-3">
+                  <div class="card profile-sidebar">
+                     <div class="card-body">
+                        <img class="rounded img-fluid" src="${data.img}" alt="${data.name}">
+                        <h5 class="card-title mb-3">${data.name}</h5>
+                        <p class="card-subtitle mb-2 text-muted">
+                           ${data.address}
+                        </p>
+                        <p>${data.desc}</p>
+                        <hr />
+                        <div class="row mt-3 card-info">
+                           <div class="col-lg-12 col-md-12">
+                              <p><strong class="text-dark">Phone :</strong> ${data.phone}</p>
+                              <p><strong class="text-dark">Email :</strong> ${data.email}</p>
+                              <p><strong class="text-dark">Website :</strong> ${data.website}</p>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+               <div class="col-lg-9 col-md-9">
+                  <div class="card">
+                     <div class="card-body">
+                        <div class="row">
+                           <div class="col-lg-12 col-md-12 section-title text-left mb-3">
+                              <h3>Bài đăng của công ty</h3>
+                           </div>
+                           ${data.posts.map(post => `
+                              <div class="col-lg-6 col-md-6">
+                                 <div class="card card-list mb-4">
+                                    <span class="badge badge-success">Bài đăng</span>
+                                    <img class="card-img-top" src="${post.img}" alt="${post.title}">
+                                    <div class="card-body">
+                                       <h5 class="card-title">${post.title}</h5>
+                                       <h6 class="card-subtitle mb-2 text-muted"><i class="mdi mdi-home-map-marker"></i> ${post.location}</h6>
+                                       <div class="review-block-rate">
+                                          <span class="badge-pill badge-success ml-2">${post.price}</span>
+                                       </div>
+                                       <p class="mb-0 mt-2">${post.content}</p>
+                                    </div>
+                                 </div>
+                              </div>
+                           `).join('')}
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+            `;
+         }
+
+         window.addEventListener('DOMContentLoaded', renderAgencyProfile);
+         </script>
+      </section>
+      <!-- End Agency Profile -->
+      <!-- My Properties -->
+      <!-- End My Properties -->
+      <!-- Contact Me -->
+      <section class="section-padding  bg-white">
+         <div class="container">
+            <div class="row">
+               <div class="col-lg-12 col-md-12 section-title text-left mb-4">
+                  <h2>Contact Me</h2>
+               </div>
+               <form class="col-lg-12 col-md-12" name="sentMessage">
+                  <div class="row">
+                     <div class="control-group form-group col-lg-4 col-md-4">
+                        <div class="controls">
+                           <label>Your Name <span class="text-danger">*</span></label>
+                           <input type="text" class="form-control" required>
+                        </div>
+                     </div>
+                     <div class="control-group form-group col-lg-4 col-md-4">
+                        <div class="controls">
+                           <label>Email Address <span class="text-danger">*</span></label>
+                           <input type="email" class="form-control" required>
+                        </div>
+                     </div>
+                     <div class="control-group form-group col-lg-4 col-md-4">
+                        <div class="controls">
+                           <label>Phone Number <span class="text-danger">*</span></label>
+                           <input type="email" class="form-control" required>
+                        </div>
+                     </div>
+                  </div>
+                  <div class="control-group form-group">
+                     <div class="controls">
+                        <label>Message <span class="text-danger">*</span></label>
+                        <textarea rows="10" cols="100" class="form-control"></textarea>
+                     </div>
+                  </div>
+                  <button type="submit" class="btn btn-success">Send Message</button>
+               </form>
+            </div>
+         </div>
+      </section>
+      <!-- End Contact Me -->
+      <!-- Join Team -->
+      <section class="py-5 bg-primary">
+         <div class="container">
+            <div class="row align-items-center text-center text-md-left">
+               <div class="col-md-8">
+                  <h2 class="text-white my-2">Join Our Professional Team & Agents</h2>
+               </div>
+               <div class="col-md-4 text-center text-md-right">
+                  <button type="button" class="btn btn-outline-light my-2">Read More</button> <button type="button"
+                     class="btn btn-light my-2">Contact Us</button>
+               </div>
+            </div>
+         </div>
+      </section>
+      <!-- End Join Team -->
+      <!-- Footer -->
+      <section class="section-padding footer bg-white">
+         <div class="container">
+            <div class="row">
+               <div class="col-md-4">
+                  <img class="img-fluid footer-logo" src="img/logo.svg" alt="">
+                  <h6 class="mb-4 mt-5">GET IN TOUCH</h6>
+                  <div class="footer-social">
+                     <a href="#"><i class="mdi mdi-facebook"></i></a>
+                     <a href="#"><i class="mdi mdi-twitter"></i></a>
+                     <a href="#"><i class="mdi mdi-instagram"></i></a>
+                     <a href="#"><i class="mdi mdi-google"></i></a>
+                  </div>
+               </div>
+               <div class="col-md-2">
+                  <h6 class="mb-4">PRODUCTS</h6>
+                  <ul>
+                  <li>
+                     <a href="#!" class="text-reset">
+                     Page Builder
+                     </a>
+                  </li>
+                  <li>
+                     <a href="#!" class="text-reset">
+                     UI Kit
+                     </a>
+                  </li>
+                  <li>
+                     <a href="#!" class="text-reset">
+                     Styleguide
+                     </a>
+                  </li>
+                  <li>
+                     <a href="#!" class="text-reset">
+                     Documentation
+                     </a>
+                  </li>
+                  <li>
+                     <a href="#!" class="text-reset">
+                     Changelog
+                     </a>
+                  </li>
+                  <ul>
+               </div>
+               <div class="col-md-2">
+                  <h6 class="mb-4">SERVICES</h6>
+                  <ul>
+                  <li>
+                     <a href="#!" class="text-reset">
+                     Documentation
+                     </a>
+                  </li>
+                  <li>
+                     <a href="#!" class="text-reset">
+                     Changelog
+                     </a>
+                  </li>
+                  <li>
+                     <a href="#!" class="text-reset">
+                     Pagebuilder
+                     </a>
+                  </li>
+                  <li>
+                     <a href="#!" class="text-reset">
+                     UI Kit
+                     </a>
+                  </li>
+                  <ul>
+               </div>
+               <div class="col-md-2">
+                  <h6 class="mb-4">CONNECT</h6>
+                  <ul>
+                  <li>
+                     <a href="#!" class="text-reset">
+                     Page Builder
+                     </a>
+                  </li>
+                  <li>
+                     <a href="#!" class="text-reset">
+                     UI Kit
+                     </a>
+                  </li>
+                  <li>
+                     <a href="#!" class="text-reset">
+                     Styleguide
+                     </a>
+                  </li>
+                  <li>
+                     <a href="#!" class="text-reset">
+                     Documentation
+                     </a>
+                  </li>
+                  <li>
+                     <a href="#!" class="text-reset">
+                     Changelog
+                     </a>
+                  </li>
+                  <li>
+                     <a href="#!" class="text-reset">
+                     Documentation
+                     </a>
+                  </li>
+                  <li>
+                     <a href="#!" class="text-reset">
+                     Changelog
+                     </a>
+                  </li>
+                  <ul>
+               </div>
+               <div class="col-md-2">
+                  <h6 class="mb-4">LEGAL</h6>
+                  <ul>
+                  <li>
+                     <a href="#!" class="text-reset">
+                     Documentation
+                     </a>
+                  </li>
+                  <li>
+                     <a href="#!" class="text-reset">
+                     Changelog
+                     </a>
+                  </li>
+                  <li>
+                     <a href="#!" class="text-reset">
+                     Pagebuilder
+                     </a>
+                  </li>
+                  <ul>
+               </div>
+            </div>
+         </div>
+      </section>
+      <!-- End Footer -->
+      <!-- Copyright -->
+      <section class="pt-4 pb-4">
+         <div class="container">
+            <div class="row align-items-center text-center text-md-left">
+               <div class="col-md-6">
+                  <p class="mt-0 mb-0">© Copyright 2020 CHIPHYSI. All Rights Reserved</p>
+               </div>
+               <div class="col-md-6 text-center text-md-right">
+                  <p class="mt-0 mb-0">
+                     CHIPHYSI
+                  </p>
+               </div>
+            </div>
+         </div>
+      </section>
+      <!-- End Copyright -->
+      <!-- Bootstrap core JavaScript -->
+      <script src="vendor/jquery/jquery.min.js"></script>
+      <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+      <!-- Contact form JavaScript -->
+      <!-- Do not edit these files! In order to set the email address and subject line for the contact form go to the bin/contact_me.php file. -->
+      <script src="js/jqBootstrapValidation.js"></script>
+      <script src="js/contact_me.js"></script>
+      <!-- select2 Js -->
+      <script src="vendor/select2/js/select2.min.js"></script>
+      <!-- Custom -->
+      <script src="js/custom.js"></script>
+   </body>
+
+
+</html>
