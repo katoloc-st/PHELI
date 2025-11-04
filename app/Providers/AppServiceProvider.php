@@ -19,6 +19,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Optimize for local development
+        if (app()->environment('local')) {
+            // Disable query logging to improve performance
+            \DB::connection()->disableQueryLog();
+        }
     }
 }

@@ -42,6 +42,8 @@ class CollectionPointController extends Controller
             'ward' => 'required|string|max:100',
             'postal_code' => 'nullable|string|max:20',
             'address_note' => 'nullable|string|max:500',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
         ]);
 
         CollectionPoint::create([
@@ -53,6 +55,8 @@ class CollectionPointController extends Controller
             'ward' => $request->ward,
             'postal_code' => $request->postal_code,
             'address_note' => $request->address_note,
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
         ]);
 
         return redirect()->route('collection-points.index')
@@ -105,6 +109,8 @@ class CollectionPointController extends Controller
             'ward' => 'required|string|max:100',
             'postal_code' => 'nullable|string|max:20',
             'address_note' => 'nullable|string|max:500',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
         ]);
 
         $collectionPoint->update([
@@ -115,6 +121,8 @@ class CollectionPointController extends Controller
             'ward' => $request->ward,
             'postal_code' => $request->postal_code,
             'address_note' => $request->address_note,
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
         ]);
 
         return redirect()->route('collection-points.index')
