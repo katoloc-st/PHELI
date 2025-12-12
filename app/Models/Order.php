@@ -15,18 +15,18 @@ class Order extends Model
         'phone',
         'full_name',
         'address',
-        'apartment',
         'ward',
         'district',
         'province',
         'full_address',
+        'latitude',
+        'longitude',
         'subtotal',
         'shipping_total',
         'discount_total',
         'grand_total',
-        'platform_discount_type',
-        'platform_discount_value',
-        'status',
+        'payment_method',
+        'voucher_id',
         'notes',
     ];
 
@@ -35,7 +35,6 @@ class Order extends Model
         'shipping_total' => 'decimal:2',
         'discount_total' => 'decimal:2',
         'grand_total' => 'decimal:2',
-        'platform_discount_value' => 'decimal:2',
     ];
 
     /**
@@ -52,6 +51,14 @@ class Order extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    /**
+     * Get the voucher applied to this order.
+     */
+    public function voucher(): BelongsTo
+    {
+        return $this->belongsTo(Voucher::class);
     }
 
     /**

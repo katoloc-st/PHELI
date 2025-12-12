@@ -16,16 +16,15 @@ class OrderItem extends Model
         'subtotal',
         'shipping_method',
         'shipping_fee',
-        'discount_type',
-        'discount_value',
         'note',
+        'voucher_id',
+        'status',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
         'subtotal' => 'decimal:2',
         'shipping_fee' => 'decimal:2',
-        'discount_value' => 'decimal:2',
     ];
 
     /**
@@ -50,5 +49,13 @@ class OrderItem extends Model
     public function seller(): BelongsTo
     {
         return $this->belongsTo(User::class, 'seller_id');
+    }
+
+    /**
+     * Get the voucher applied to this order item.
+     */
+    public function voucher(): BelongsTo
+    {
+        return $this->belongsTo(Voucher::class);
     }
 }

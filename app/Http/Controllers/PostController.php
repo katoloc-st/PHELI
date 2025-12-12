@@ -67,7 +67,7 @@ class PostController extends Controller
         $request->validate([
             'waste_type_id' => 'required|exists:waste_types,id',
             'title' => 'required|string|max:255',
-            'description' => 'required|string',
+            'description' => 'nullable|string',
             'quantity' => 'required|numeric|min:0.01',
             'price' => 'required|numeric|min:0.01',
             'collection_point_id' => 'required|exists:collection_points,id',
@@ -169,7 +169,7 @@ class PostController extends Controller
         $request->validate([
             'waste_type_id' => 'required|exists:waste_types,id',
             'title' => 'required|string|max:255',
-            'description' => 'required|string',
+            'description' => 'nullable|string',
             'quantity' => 'required|numeric|min:0.01',
             'price' => 'required|numeric|min:0.01',
             'collection_point_id' => 'required|exists:collection_points,id',

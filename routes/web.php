@@ -101,6 +101,15 @@ Route::middleware('auth')->group(function () {
 
     // Order Routes
     Route::resource('orders', \App\Http\Controllers\OrderController::class);
+
+    // Invoice Routes
+    Route::get('/invoice', [\App\Http\Controllers\InvoiceController::class, 'index'])->name('invoice.index');
+    Route::get('/invoice/{id}/print', [\App\Http\Controllers\InvoiceController::class, 'print'])->name('invoice.print');
+    Route::get('/invoice/{id}/pdf', [\App\Http\Controllers\InvoiceController::class, 'pdf'])->name('invoice.pdf');
+
+    // Voucher Routes
+    Route::post('/api/voucher/apply', [\App\Http\Controllers\VoucherController::class, 'apply'])->name('voucher.apply');
+    Route::post('/api/voucher/remove', [\App\Http\Controllers\VoucherController::class, 'remove'])->name('voucher.remove');
 });
 
 // Public post detail route (placed after all specific routes to avoid conflicts)

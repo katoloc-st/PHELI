@@ -29,20 +29,25 @@
                             <p class="text-muted mb-0">Đặt ngày {{ $order->created_at->format('d/m/Y H:i') }}</p>
                         </div>
                         <div class="col-md-4 text-md-end">
-                            @switch($order->status)
-                                @case('pending')
-                                    <span class="badge bg-warning fs-6">Chờ xử lý</span>
-                                    @break
-                                @case('processing')
-                                    <span class="badge bg-info fs-6">Đang xử lý</span>
-                                    @break
-                                @case('completed')
-                                    <span class="badge bg-success fs-6">Hoàn thành</span>
-                                    @break
-                                @case('cancelled')
-                                    <span class="badge bg-danger fs-6">Đã hủy</span>
-                                    @break
-                            @endswitch
+                            @php
+                                // Tính trạng thái tổng hợp từ các items
+                                $allCompleted = $order->items->every(fn($item) => $item->status === 'completed');
+                                $allCancelled = $order->items->every(fn($item) => $item->status === 'cancelled');
+                                $hasProcessing = $order->items->contains(fn($item) => $item->status === 'processing');
+                                $hasPending = $order->items->contains(fn($item) => $item->status === 'pending');
+                            @endphp
+
+                            @if($allCompleted)
+                                <span class="badge bg-success fs-6">Hoàn thành</span>
+                            @elseif($allCancelled)
+                                <span class="badge bg-danger fs-6">Đã hủy</span>
+                            @elseif($hasProcessing)
+                                <span class="badge bg-info fs-6">Đang xử lý</span>
+                            @elseif($hasPending)
+                                <span class="badge bg-warning fs-6">Chờ xử lý</span>
+                            @else
+                                <span class="badge bg-secondary fs-6">Hỗn hợp</span>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -186,12 +191,15 @@
                         <a href="{{ route('orders.index') }}" class="btn btn-outline-primary w-100 mb-2">
                             <i class="mdi mdi-arrow-left"></i> Quay lại danh sách
                         </a>
-                        @if($order->status === 'pending')
-                            <form action="{{ route('orders.destroy', $order->id) }}" method="POST" onsubmit="return confirm('Bạn có chắc muốn hủy đơn hàng này?')">
+                        @php
+                            $hasPendingItems = $order->items->contains(fn($item) => $item->status === 'pending');
+                        @endphp
+                        @if($hasPendingItems)
+                            <form action="{{ route('orders.destroy', $order->id) }}" method="POST" onsubmit="return confirm('Bạn có chắc muốn hủy các sản phẩm đang chờ xử lý trong đơn hàng này?')">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-danger w-100">
-                                    <i class="mdi mdi-close"></i> Hủy đơn hàng
+                                    <i class="mdi mdi-close"></i> Hủy các sản phẩm chờ xử lý
                                 </button>
                             </form>
                         @endif

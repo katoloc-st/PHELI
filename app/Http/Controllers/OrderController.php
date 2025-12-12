@@ -13,16 +13,24 @@ use Illuminate\Support\Facades\Log;
 class OrderController extends Controller
 {
     /**
-     * Display a listing of the user's orders.
+     * Display a listing of the user's order items (purchased posts).
      */
-    public function index()
+    public function index(Request $request)
     {
-        $orders = Order::where('user_id', Auth::id())
-            ->with(['items.post', 'items.seller'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+        // Query order items của user thông qua orders
+        $query = OrderItem::whereHas('order', function($q) {
+                $q->where('user_id', Auth::id());
+            })
+            ->with(['post.wasteType', 'seller', 'order']);
 
-        return view('orders.index', compact('orders'));
+        // Filter theo status nếu có
+        if ($request->has('status') && in_array($request->status, ['pending', 'processing', 'completed', 'cancelled'])) {
+            $query->where('status', $request->status);
+        }
+
+        $orderItems = $query->orderBy('created_at', 'desc')->paginate(10);
+
+        return view('orders.index', compact('orderItems'));
     }
 
     /**
@@ -57,6 +65,19 @@ class OrderController extends Controller
 
             DB::beginTransaction();
 
+            // Handle voucher if provided
+            $voucherId = null;
+            $voucher = null;
+            if (!empty($orderData['voucher_id'])) {
+                $voucher = \App\Models\Voucher::find($orderData['voucher_id']);
+                if ($voucher) {
+                    // Verify voucher is still valid
+                    if ($voucher->isValid() && $voucher->canBeUsedBy(Auth::id())) {
+                        $voucherId = $voucher->id;
+                    }
+                }
+            }
+
             // Create order
             $order = Order::create([
                 'user_id' => Auth::id(),
@@ -65,22 +86,39 @@ class OrderController extends Controller
                 'phone' => $orderData['phone'],
                 'full_name' => $orderData['full_name'],
                 'address' => $orderData['address'],
-                'apartment' => $orderData['apartment'] ?? null,
+                'notes' => $orderData['notes'] ?? null,
                 'ward' => $orderData['ward'],
                 'district' => $orderData['district'],
                 'province' => $orderData['province'],
                 'full_address' => $orderData['full_address'],
+                'latitude' => $orderData['latitude'] ?? null,
+                'longitude' => $orderData['longitude'] ?? null,
                 'subtotal' => $orderData['subtotal'],
                 'shipping_total' => $orderData['shipping_total'],
                 'discount_total' => $orderData['discount_total'],
                 'grand_total' => $orderData['grand_total'],
-                'platform_discount_type' => $orderData['platform_discount_type'] ?? null,
-                'platform_discount_value' => $orderData['platform_discount_value'] ?? null,
+                'payment_method' => $orderData['payment_method'] ?? 'cod',
+                'voucher_id' => $voucherId,
                 'status' => 'pending',
             ]);
 
             // Create order items for each seller
             foreach ($orderData['sellers'] as $seller) {
+                // Validate seller voucher if provided
+                $sellerVoucherId = null;
+                $sellerVoucher = null;
+                if (!empty($seller['voucher_id'])) {
+                    $sellerVoucher = \App\Models\Voucher::find($seller['voucher_id']);
+                    if ($sellerVoucher) {
+                        // Verify voucher is still valid and belongs to this seller
+                        if ($sellerVoucher->isValid() &&
+                            $sellerVoucher->canBeUsedBy(Auth::id()) &&
+                            ($sellerVoucher->applies_to === 'seller' && $sellerVoucher->seller_id == $seller['seller_id'])) {
+                            $sellerVoucherId = $sellerVoucher->id;
+                        }
+                    }
+                }
+
                 foreach ($seller['items'] as $item) {
                     // Verify post exists and is available
                     $post = Post::find($item['post_id']);
@@ -97,12 +135,42 @@ class OrderController extends Controller
                         'subtotal' => $item['subtotal'],
                         'shipping_method' => $seller['shipping_method'] ?? null,
                         'shipping_fee' => $seller['shipping_fee'] ?? 0,
-                        'discount_type' => $seller['discount_type'] ?? null,
-                        'discount_value' => $seller['discount_value'] ?? null,
                         'note' => $seller['note'] ?? null,
+                        'voucher_id' => $sellerVoucherId,
                     ]);
                 }
+
+                // Track seller voucher usage if applied
+                if ($sellerVoucher && $sellerVoucherId) {
+                    // Create voucher usage record for seller voucher
+                    \App\Models\VoucherUsage::create([
+                        'voucher_id' => $sellerVoucherId,
+                        'user_id' => Auth::id(),
+                        'order_id' => $order->id,
+                        'discount_amount' => $seller['discount_amount'] ?? 0,
+                    ]);
+
+                    // Increment voucher usage count
+                    $sellerVoucher->increment('usage_count');
+                }
             }
+
+            // Track voucher usage if applied
+            if ($voucher && $voucherId) {
+                // Create voucher usage record
+                \App\Models\VoucherUsage::create([
+                    'voucher_id' => $voucherId,
+                    'user_id' => Auth::id(),
+                    'order_id' => $order->id,
+                    'discount_amount' => $orderData['discount_total'] ?? 0,
+                ]);
+
+                // Increment voucher usage count
+                $voucher->increment('usage_count');
+            }
+
+            // Clear cart after successful order
+            \App\Models\Cart::where('user_id', Auth::id())->delete();
 
             DB::commit();
 
@@ -150,19 +218,24 @@ class OrderController extends Controller
     }
 
     /**
-     * Cancel the order.
+     * Cancel the order - updates all order items to cancelled status.
      */
     public function destroy(string $id)
     {
         $order = Order::where('id', $id)
             ->where('user_id', Auth::id())
+            ->with('items')
             ->firstOrFail();
 
-        if ($order->status !== 'pending') {
-            return back()->with('error', 'Chỉ có thể hủy đơn hàng đang chờ xử lý!');
+        // Kiểm tra xem có item nào đang chờ xử lý không
+        $hasPendingItems = $order->items()->where('status', 'pending')->exists();
+
+        if (!$hasPendingItems) {
+            return back()->with('error', 'Không có sản phẩm nào đang chờ xử lý để hủy!');
         }
 
-        $order->update(['status' => 'cancelled']);
+        // Cập nhật tất cả items đang pending thành cancelled
+        $order->items()->where('status', 'pending')->update(['status' => 'cancelled']);
 
         return back()->with('success', 'Đã hủy đơn hàng thành công!');
     }

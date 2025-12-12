@@ -239,10 +239,10 @@
                      <i class="mdi mdi-magnify search-icon"></i>
                   </div>
 
-                  <!-- Hàng 4: Căn hộ, dãy nhà -->
+                  <!-- Hàng 4: Ghi chú -->
                   <div class="form-group">
-                     <input type="text" class="form-control form-control-lg" id="apartment"
-                            placeholder="Căn hộ, dãy nhà, v.v. (không bắt buộc)">
+                     <textarea class="form-control form-control-lg" id="notes" rows="2"
+                            placeholder="Ghi chú thêm về địa chỉ (căn hộ, dãy nhà, v.v.)"></textarea>
                   </div>
 
                   <div class="custom-control custom-checkbox mb-3">
@@ -327,7 +327,7 @@
                   <div class="input-group">
                      <input type="text" class="form-control" id="discountCode" placeholder="Mã giảm giá">
                      <div class="input-group-append">
-                        <button class="btn btn-outline-secondary" type="button" onclick="applyDiscount()">
+                        <button class="btn btn-outline-secondary" type="button" id="discountBtn">
                            Áp dụng
                         </button>
                      </div>
@@ -359,6 +359,14 @@
                      <span style="color: #ef4444;">Tổng cộng Voucher giảm giá</span>
                      <span style="color: #ef4444; font-weight: 600;" id="voucherDiscount">-0 VNĐ</span>
                   </div>
+
+                  @if(auth()->check() && auth()->user()->role === 'scrap_dealer')
+                  <!-- Tiền cọc 7.5% (chỉ hiển thị cho cơ sở phế liệu) -->
+                  <div class="summary-row" id="depositRow">
+                     <span style="color: #f59e0b;">Tiền cọc (7.5%)</span>
+                     <span style="color: #f59e0b; font-weight: 600;" id="depositAmount">0 VNĐ</span>
+                  </div>
+                  @endif
 
                   <hr>
                   <div class="summary-row total-row">
@@ -627,6 +635,25 @@
    background: #667eea;
    color: white;
    border-color: #667eea;
+}
+
+.voucher-remove-btn {
+   height: 40px;
+   padding: 0 20px;
+   background: #ef4444;
+   border: 2px solid #ef4444;
+   border-radius: 6px;
+   font-size: 14px;
+   font-weight: 600;
+   color: white;
+   cursor: pointer;
+   white-space: nowrap;
+   transition: all 0.2s;
+}
+
+.voucher-remove-btn:hover {
+   background: #dc2626;
+   border-color: #dc2626;
 }
 
 /* Seller Note */
@@ -1028,6 +1055,11 @@ window.platformDiscount = null;
 $(document).ready(function() {
    loadOrderSummary();
    initializeMap();
+
+   // Initialize discount button event
+   $('#discountBtn').on('click', function() {
+      applyDiscount();
+   });
 
    // Handle province change to update district dropdown
    $('#state').on('change', function() {
@@ -1578,8 +1610,7 @@ function renderOrderItems(items, total) {
             <div class="seller-shipping">
                <label class="shipping-label">Phương thức vận chuyển</label>
                <select class="shipping-select" data-seller-id="${sellerId}" onchange="updateShipping(${sellerId})">
-                  <option value="">Xem tất cả</option>
-                  <option value="standard" data-fee="0">Tiêu chuẩn - Miễn phí</option>
+                  <option value="standard" data-fee="0" selected>Tiêu chuẩn - Miễn phí</option>
                   <option value="express" data-fee="20000">Nhanh - 20.000đ</option>
                   <option value="super-express" data-fee="50000">Hỏa tốc - 50.000đ</option>
                </select>
@@ -1615,7 +1646,63 @@ function renderOrderItems(items, total) {
       `;
    });
 
+   // Save current shipping selections, voucher flags, and seller vouchers before re-rendering
+   const savedShippingStates = {};
+   const savedSellerVouchers = {};
+   $('.shipping-select').each(function() {
+      const sellerId = $(this).data('seller-id');
+      savedShippingStates[sellerId] = {
+         method: $(this).val(),
+         platformFreeShipping: $(this).data('platform-free-shipping') || false,
+         sellerFreeShipping: $(this).data('seller-free-shipping') || false
+      };
+   });
+
+   // Save seller voucher states
+   $('.voucher-input').each(function() {
+      const sellerId = $(this).data('seller-id');
+      const voucherCode = $(this).val();
+      const isApplied = $(this).prop('disabled');
+      savedSellerVouchers[sellerId] = {
+         code: voucherCode,
+         applied: isApplied
+      };
+   });
+
    $('#orderItems').html(html);
+
+   // Restore shipping selections and flags
+   Object.keys(savedShippingStates).forEach(sellerId => {
+      const state = savedShippingStates[sellerId];
+      const select = $(`.shipping-select[data-seller-id="${sellerId}"]`);
+
+      if (state.method) {
+         select.val(state.method);
+      }
+
+      select.data('platform-free-shipping', state.platformFreeShipping);
+      select.data('seller-free-shipping', state.sellerFreeShipping);
+
+      // Update UI for this seller
+      updateShipping(sellerId);
+   });
+
+   // Restore seller vouchers
+   Object.keys(savedSellerVouchers).forEach(sellerId => {
+      const voucherState = savedSellerVouchers[sellerId];
+      if (voucherState.code) {
+         const input = $(`.voucher-input[data-seller-id="${sellerId}"]`);
+         const btn = $(`.voucher-btn[onclick*="${sellerId}"], .voucher-remove-btn[onclick*="${sellerId}"]`);
+
+         input.val(voucherState.code);
+
+         if (voucherState.applied) {
+            input.prop('disabled', true);
+            btn.html('Hủy').removeClass('voucher-btn').addClass('voucher-remove-btn')
+               .attr('onclick', `removeSellerVoucher(${sellerId})`);
+         }
+      }
+   });
 
    // Store original total for discount calculation
    window.orderData = {
@@ -1693,7 +1780,14 @@ function updateOrderTotals() {
    // Calculate final amounts
    const finalProductTotal = totalProducts - totalVoucherDiscount;
    const finalShippingTotal = totalShipping - totalShippingDiscount;
-   const grandTotal = finalProductTotal + finalShippingTotal;
+
+   // Calculate deposit (7.5% for scrap_dealer users)
+   let depositAmount = 0;
+   @if(auth()->check() && auth()->user()->role === 'scrap_dealer')
+      depositAmount = totalProducts * 0.075; // 7.5% of product total
+   @endif
+
+   const grandTotal = finalProductTotal + finalShippingTotal + depositAmount;
 
    // Update display
    $('#subtotal').text(formatNumber(totalProducts) + ' VNĐ');
@@ -1715,6 +1809,11 @@ function updateOrderTotals() {
       $('#voucherDiscountRow').hide();
    }
 
+   // Update deposit amount (for scrap_dealer users)
+   @if(auth()->check() && auth()->user()->role === 'scrap_dealer')
+      $('#depositAmount').text(formatNumber(depositAmount) + ' VNĐ');
+   @endif
+
    $('#total').html(`${formatNumber(grandTotal)} <small class="text-muted">VNĐ</small>`);
 }
 
@@ -1722,46 +1821,139 @@ function updateOrderTotals() {
 function applyDiscount() {
    const code = $('#discountCode').val().trim();
    if (!code) {
-      alert('Vui lòng nhập mã giảm giá!');
+      showToast('Vui lòng nhập mã giảm giá!', 'error');
       return;
    }
 
-   // Demo: Check voucher type
-   const upperCode = code.toUpperCase();
+   // Calculate total order value (before discount)
+   let orderValue = 0;
+   if (window.orderData && window.orderData.groupedItems) {
+      Object.keys(window.orderData.groupedItems).forEach(sellerId => {
+         const group = window.orderData.groupedItems[sellerId];
+         if (group.items) {
+            group.items.forEach(item => {
+               orderValue += parseFloat(item.post.price) * parseFloat(item.quantity);
+            });
+         }
+      });
+   }
 
-   // Clear previous platform voucher (chỉ cho phép 1 voucher sàn)
+   // Check if order value is valid
+   if (isNaN(orderValue) || orderValue <= 0) {
+      showToast('Không có sản phẩm trong giỏ hàng!', 'error');
+      return;
+   }
+
+   // Calculate total shipping fee
+   let totalShippingFee = 0;
+   $('.shipping-select').each(function() {
+      const selectedOption = $(this).find('option:selected');
+      const fee = parseFloat(selectedOption.data('fee')) || 0;
+      totalShippingFee += fee;
+   });
+
+   // Clear previous platform voucher
    clearPlatformVoucher();
 
-   // 1. Miễn phí vận chuyển cho TẤT CẢ người bán
-   if (upperCode.includes('FREESHIP') || upperCode.includes('MIENPHI')) {
-      applyPlatformFreeShipping();
-      showToast('Áp dụng miễn phí vận chuyển cho toàn bộ đơn hàng!', 'success');
-      return;
-   }
+   // Show loading
+   const $btn = $('#discountBtn');
+   const originalText = $btn.html();
+   $btn.html('<i class="fas fa-spinner fa-spin"></i> Đang xử lý...').prop('disabled', true);
 
-   // 2. Giảm % tổng đơn hàng
-   if (upperCode.includes('GIAM')) {
-      const match = upperCode.match(/GIAM(\d+)/);
-      if (match) {
-         const percent = parseInt(match[1]);
-         applyPlatformPercentDiscount(percent);
-         showToast(`Áp dụng giảm ${percent}% cho toàn bộ đơn hàng!`, 'success');
-         return;
+   // Call API to validate and apply voucher
+   $.ajax({
+      url: '{{ route("voucher.apply") }}',
+      method: 'POST',
+      data: {
+         code: code,
+         order_value: orderValue,
+         shipping_fee: totalShippingFee,
+         _token: '{{ csrf_token() }}'
+      },
+      success: function(response) {
+         if (response.success) {
+            const voucher = response.data;
+
+            // Apply voucher based on type
+            if (voucher.type === 'percent') {
+               window.platformDiscount = {
+                  type: 'percent',
+                  value: voucher.value,
+                  id: voucher.voucher_id, // Voucher ID for database tracking
+                  code: voucher.code
+               };
+            } else if (voucher.type === 'fixed') {
+               window.platformDiscount = {
+                  type: 'fixed',
+                  value: voucher.value,
+                  id: voucher.voucher_id, // Voucher ID for database tracking
+                  code: voucher.code
+               };
+            } else if (voucher.type === 'freeship') {
+               window.platformDiscount = {
+                  type: 'freeship',
+                  value: 0,
+                  id: voucher.voucher_id, // Voucher ID for database tracking
+                  code: voucher.code
+               };
+               // Set platform free shipping flag for all sellers
+               $('.shipping-select').each(function() {
+                  $(this).data('platform-free-shipping', true);
+                  const sellerId = $(this).data('seller-id');
+                  // Update UI to show free shipping
+                  updateShipping(sellerId);
+               });
+            }
+
+            // Update order summary
+            loadOrderSummary();
+
+            showToast(`${response.message} Giảm ${formatNumber(voucher.discount_amount)} VNĐ`, 'success');
+
+            // Show applied voucher
+            $('#discountCode').val(voucher.code).prop('disabled', true);
+            $btn.html('Hủy').removeClass('btn-outline-secondary').addClass('btn-danger')
+               .off('click').on('click', function() { removePlatformVoucher(); })
+               .prop('disabled', false);
+         } else {
+            showToast(response.message, 'error');
+            $btn.html(originalText).prop('disabled', false);
+         }
+      },
+      error: function(xhr) {
+         let message = 'Có lỗi xảy ra khi áp dụng mã giảm giá!';
+         if (xhr.responseJSON && xhr.responseJSON.message) {
+            message = xhr.responseJSON.message;
+         }
+         showToast(message, 'error');
+         $btn.html(originalText).prop('disabled', false);
       }
-   }
+   });
+}
 
-   // 3. Giảm tiền cố định cho tổng đơn
-   if (upperCode.includes('GIAM') && upperCode.includes('K')) {
-      const match = upperCode.match(/GIAM(\d+)K/);
-      if (match) {
-         const amount = parseInt(match[1]) * 1000;
-         applyPlatformFixedDiscount(amount);
-         showToast(`Áp dụng giảm ${formatNumber(amount)}đ cho toàn bộ đơn hàng!`, 'success');
-         return;
+// Remove platform voucher
+function removePlatformVoucher() {
+   $.ajax({
+      url: '{{ route("voucher.remove") }}',
+      method: 'POST',
+      data: {
+         _token: '{{ csrf_token() }}'
+      },
+      success: function(response) {
+         clearPlatformVoucher();
+
+         // Reset input
+         $('#discountCode').val('').prop('disabled', false);
+         const $btn = $('#discountBtn');
+         $btn.html('Áp dụng').removeClass('btn-danger').addClass('btn-outline-secondary')
+            .off('click').on('click', function() { applyDiscount(); });
+
+         showToast('Đã hủy mã giảm giá', 'success');
+      },
+      error: function() {
+         showToast('Có lỗi xảy ra!', 'error');
       }
-   }
-
-   alert('Mã giảm giá không hợp lệ!');
+   });
 }
 
 // Clear platform voucher
@@ -1793,6 +1985,9 @@ function clearPlatformVoucher() {
 
    // Reset platform product discount
    window.platformDiscount = null;
+
+   // Update summary
+   loadOrderSummary();
 }
 
 // Apply platform-wide free shipping (all sellers)
@@ -1850,99 +2045,144 @@ function applySellerVoucher(sellerId) {
    const code = input.val().trim();
 
    if (!code) {
-      alert('Vui lòng nhập mã giảm giá của người bán!');
+      showToast('Vui lòng nhập mã giảm giá của người bán!', 'error');
       return;
    }
 
-   const upperCode = code.toUpperCase();
-
-   // Clear previous seller voucher (chỉ cho phép 1 voucher/shop)
-   const select = $(`.shipping-select[data-seller-id="${sellerId}"]`);
-   const selectedOption = select.find('option:selected');
-   const originalFee = parseInt(selectedOption.data('fee') || 0);
-
-   // Reset shipping discount
-   select.data('seller-free-shipping', false);
-   const feeContainer = $(`#shipping-fee-${sellerId}`);
-   if (originalFee === 0) {
-      feeContainer.html('<span class="fee-amount">Miễn Phí</span>');
-   } else {
-      feeContainer.html('<span class="fee-amount">' + formatNumber(originalFee) + 'đ</span>');
+   // Calculate seller's order value
+   let sellerOrderValue = 0;
+   if (window.orderData && window.orderData.groupedItems && window.orderData.groupedItems[sellerId]) {
+      const sellerItems = window.orderData.groupedItems[sellerId].items;
+      sellerItems.forEach(item => {
+         sellerOrderValue += parseFloat(item.post.price) * parseFloat(item.quantity);
+      });
    }
-   select.data('current-fee', originalFee);
 
-   // Reset product discount
+   // Check if order value is valid
+   if (isNaN(sellerOrderValue) || sellerOrderValue <= 0) {
+      showToast('Không có sản phẩm của người bán này!', 'error');
+      return;
+   }
+
+   // Get shipping fee for this seller
+   const shippingSelect = $(`.shipping-select[data-seller-id="${sellerId}"]`);
+   const selectedOption = shippingSelect.find('option:selected');
+   const shippingFee = parseFloat(selectedOption.data('fee')) || 0;
+
+   // Clear previous seller voucher
+   clearSellerVoucher(sellerId);
+
+   // Show loading
+   const btn = $(`.voucher-btn[onclick*="${sellerId}"]`);
+   const originalText = btn.html();
+   btn.html('<i class="fas fa-spinner fa-spin"></i>').prop('disabled', true);
+   input.prop('disabled', true);
+
+   // Call API to validate and apply voucher
+   $.ajax({
+      url: '{{ route("voucher.apply") }}',
+      method: 'POST',
+      data: {
+         code: code,
+         order_value: sellerOrderValue,
+         seller_id: sellerId,
+         shipping_fee: shippingFee,
+         _token: '{{ csrf_token() }}'
+      },
+      success: function(response) {
+         if (response.success) {
+            const voucher = response.data;
+
+            // Store seller voucher
+            if (!window.sellerDiscounts) {
+               window.sellerDiscounts = {};
+            }
+
+            window.sellerDiscounts[sellerId] = {
+               type: voucher.type,
+               value: voucher.value,
+               id: voucher.voucher_id,
+               code: voucher.code,
+               discount_amount: voucher.discount_amount
+            };
+
+            // If freeship voucher, set flag and update UI
+            if (voucher.type === 'freeship') {
+               shippingSelect.data('seller-free-shipping', true);
+               updateShipping(sellerId);
+            }
+
+            // Update order summary
+            updateOrderTotals();
+
+            const discountMsg = voucher.type === 'freeship'
+               ? 'Miễn phí vận chuyển!'
+               : `Giảm ${formatNumber(voucher.discount_amount)} VNĐ`;
+            showToast(`${response.message} ${discountMsg}`, 'success');
+
+            // Change button to remove
+            input.prop('disabled', true);
+            btn.html('Hủy').removeClass('voucher-btn').addClass('voucher-remove-btn')
+               .attr('onclick', `removeSellerVoucher(${sellerId})`)
+               .prop('disabled', false);
+         } else {
+            showToast(response.message, 'error');
+            input.prop('disabled', false);
+            btn.html(originalText).prop('disabled', false);
+         }
+      },
+      error: function(xhr) {
+         let message = 'Có lỗi xảy ra khi áp dụng mã giảm giá!';
+         if (xhr.responseJSON && xhr.responseJSON.message) {
+            message = xhr.responseJSON.message;
+         }
+         showToast(message, 'error');
+         input.prop('disabled', false);
+         btn.html(originalText).prop('disabled', false);
+      }
+   });
+}
+
+// Remove seller voucher
+function removeSellerVoucher(sellerId) {
+   // Check if it was a freeship voucher
+   const wasFreeship = window.sellerDiscounts && window.sellerDiscounts[sellerId]
+      && window.sellerDiscounts[sellerId].type === 'freeship';
+
+   // If it was freeship, restore original shipping fee
+   if (wasFreeship) {
+      const shippingSelect = $(`.shipping-select[data-seller-id="${sellerId}"]`);
+      const selectedOption = shippingSelect.find('option:selected');
+      const originalFee = parseInt(selectedOption.data('fee') || 0);
+      const feeContainer = $(`#shipping-fee-${sellerId}`);
+
+      if (originalFee === 0) {
+         feeContainer.html('<span class="fee-amount">Miễn Phí</span>');
+      } else {
+         feeContainer.html('<span class="fee-amount">' + formatNumber(originalFee) + 'đ</span>');
+      }
+      shippingSelect.data('current-fee', originalFee);
+   }
+
+   clearSellerVoucher(sellerId);
+   updateOrderTotals();
+   showToast('Đã hủy mã giảm giá của shop này', 'info');
+
+   // Reset button
+   const input = $(`.voucher-input[data-seller-id="${sellerId}"]`);
+   const btn = $(`.voucher-remove-btn[onclick*="${sellerId}"], .voucher-btn[onclick*="${sellerId}"]`);
+
+   input.val('').prop('disabled', false);
+   btn.html('Áp dụng').removeClass('voucher-remove-btn').addClass('voucher-btn')
+      .attr('onclick', `applySellerVoucher(${sellerId})`);
+}
+
+// Clear seller voucher data
+function clearSellerVoucher(sellerId) {
    if (window.sellerDiscounts && window.sellerDiscounts[sellerId]) {
       delete window.sellerDiscounts[sellerId];
-      $(`#seller-discount-${sellerId}`).hide();
    }
-
-   // 1. Miễn phí vận chuyển CHỈ cho người bán này
-   if (upperCode.includes('FREESHIP') || upperCode.includes('MIENPHI')) {
-      if (originalFee > 0) {
-         feeContainer.html(`
-            <span class="fee-original">${formatNumber(originalFee)}đ</span>
-            <span class="fee-amount">Miễn Phí</span>
-         `);
-
-         select.data('seller-free-shipping', true);
-         select.data('current-fee', 0);
-
-         // Update totals
-         updateOrderTotals();
-
-         showToast('Áp dụng miễn phí vận chuyển cho shop này!', 'success');
-      } else {
-         alert('Phương thức vận chuyển này đã miễn phí!');
-      }
-      return;
-   }
-
-   // 2. Giảm % cho đơn hàng của người bán này
-   if (upperCode.includes('GIAM')) {
-      const match = upperCode.match(/GIAM(\d+)/);
-      if (match) {
-         const percent = parseInt(match[1]);
-
-         // Store seller-specific discount
-         if (!window.sellerDiscounts) {
-            window.sellerDiscounts = {};
-         }
-         window.sellerDiscounts[sellerId] = {
-            type: 'percent',
-            value: percent
-         };
-
-         // Update display
-         updateOrderTotals();
-         showToast(`Áp dụng giảm ${percent}% cho shop này!`, 'success');
-         return;
-      }
-   }
-
-   // 3. Giảm tiền cố định cho đơn hàng của người bán này
-   if (upperCode.includes('GIAM') && upperCode.includes('K')) {
-      const match = upperCode.match(/GIAM(\d+)K/);
-      if (match) {
-         const amount = parseInt(match[1]) * 1000;
-
-         // Store seller-specific discount
-         if (!window.sellerDiscounts) {
-            window.sellerDiscounts = {};
-         }
-         window.sellerDiscounts[sellerId] = {
-            type: 'fixed',
-            value: amount
-         };
-
-         // Update display
-         updateOrderTotals();
-         showToast(`Áp dụng giảm ${formatNumber(amount)}đ cho shop này!`, 'success');
-         return;
-      }
-   }
-
-   alert('Mã voucher không hợp lệ!');
+   $(`#seller-discount-${sellerId}`).hide();
 }
 
 // Update shipping method for seller
@@ -1961,44 +2201,75 @@ function updateShipping(sellerId) {
 
       // Get shipping method details
       let methodName = '';
-      let methodDate = 'Nhận từ 9 Th11 - 10 Th11';
-      let methodNote = 'Nhận Voucher trị giá 15.000đ nếu đơn hàng được giao đến bạn sau ngày 10 Tháng 11 2025.';
+      let methodDate = '';
+      let methodNote = '';
+      
+      // Calculate delivery dates based on current date
+      const today = new Date();
+      let startDays, endDays;
 
       switch(method) {
          case 'standard':
-            methodName = 'Quốc tế Tiêu chuẩn - Standard International';
-            methodDate = 'Nhận từ 9 Th11 - 10 Th11';
+            methodName = 'Tiêu chuẩn - Standard Shipping';
+            startDays = 10;
+            endDays = 15;
+            methodNote = 'Giao hàng tiêu chuẩn trong 10-15 ngày.';
             break;
          case 'express':
             methodName = 'Nhanh - Express Shipping';
-            methodDate = 'Nhận từ 5 Th11 - 6 Th11';
-            methodNote = 'Giao hàng nhanh trong 2-3 ngày.';
+            startDays = 5;
+            endDays = 7;
+            methodNote = 'Giao hàng nhanh trong 5-7 ngày.';
             break;
          case 'super-express':
             methodName = 'Hỏa tốc - Super Express';
-            methodDate = 'Nhận trong ngày 1 Th11';
-            methodNote = 'Giao hàng trong ngày, đảm bảo nhanh nhất.';
+            startDays = 2;
+            endDays = 3;
+            methodNote = 'Giao hàng hỏa tốc trong 2-3 ngày.';
             break;
       }
+      
+      // Calculate delivery date range
+      const startDate = new Date(today);
+      startDate.setDate(today.getDate() + startDays);
+      const endDate = new Date(today);
+      endDate.setDate(today.getDate() + endDays);
+      
+      const formatDate = (date) => {
+         const day = date.getDate();
+         const month = date.getMonth() + 1;
+         return `${day}/${month}`;
+      };
+      
+      methodDate = `Nhận từ ${formatDate(startDate)} - ${formatDate(endDate)}`;
 
       // Update content
       detailBox.find('.shipping-method-name').text(methodName);
       detailBox.find('.shipping-date').text(methodDate);
       detailBox.find('.shipping-note').text(methodNote);
 
+      // Check for free shipping vouchers
+      const hasPlatformFreeShip = select.data('platform-free-shipping');
+      const hasSellerFreeShip = select.data('seller-free-shipping');
+
       // Update fee display
-      if (fee === 0) {
+      if (hasPlatformFreeShip || hasSellerFreeShip) {
+         if (fee > 0) {
+            feeContainer.html('<span class="fee-amount" style="text-decoration: line-through;">' + formatNumber(fee) + 'đ</span> <span class="free-label" style="color: #28a745; font-weight: 600;">Miễn phí</span>');
+         } else {
+            feeContainer.html('<span class="fee-amount">Miễn Phí</span>');
+         }
+         select.data('current-fee', 0);
+      } else if (fee === 0) {
          feeContainer.html('<span class="fee-amount">Miễn Phí</span>');
+         select.data('current-fee', fee);
       } else {
          feeContainer.html('<span class="fee-amount">' + formatNumber(fee) + 'đ</span>');
+         select.data('current-fee', fee);
       }
 
-      // Store fee for total calculation
-      select.data('current-fee', fee);
-
-      // Clear free shipping flags when changing method
+      // Clear seller free shipping flag when changing method (but keep platform flag)
       select.data('seller-free-shipping', false);
-      select.data('platform-free-shipping', false);
    } else {
       // Hide detail box if no method selected
       detailBox.hide();
@@ -2023,7 +2294,7 @@ $('#checkoutForm').on('submit', function(e) {
    const state = $('#state').val();
    const district = $('#district').val();
    const ward = $('#ward').val();
-   const apartment = $('#apartment').val();
+   const notes = $('#notes').val();
    const saveInfo = $('#saveInfo').is(':checked');
 
    if (!email || !phone || !fullName || !address || !state || !district || !ward) {
@@ -2049,8 +2320,14 @@ $('#checkoutForm').on('submit', function(e) {
 
    // Build full address
    let fullAddress = `${address}, ${ward}, ${district}, ${state}`;
-   if (apartment) {
-      fullAddress = `${apartment}, ${fullAddress}`;
+
+   // Get coordinates from marker
+   let latitude = null;
+   let longitude = null;
+   if (marker) {
+      const lngLat = marker.getLngLat();
+      latitude = lngLat.lat;
+      longitude = lngLat.lng;
    }
 
    // Collect order data
@@ -2062,12 +2339,17 @@ $('#checkoutForm').on('submit', function(e) {
 
       // Shipping address
       address: address,
-      apartment: apartment,
+      notes: notes,
       ward: ward,
       district: district,
       province: state,
       full_address: fullAddress,
+      latitude: latitude,
+      longitude: longitude,
       save_info: saveInfo ? 1 : 0,
+
+      // Payment method
+      payment_method: $('input[name="payment"]:checked').val() || 'cod',
 
       // Order items grouped by seller
       sellers: [],
@@ -2116,27 +2398,35 @@ $('#checkoutForm').on('submit', function(e) {
             shipping_method: shippingMethod,
             shipping_fee: shippingFee,
             note: note,
-            discount_type: sellerDiscount.type,
-            discount_value: sellerDiscount.value,
+            voucher_id: sellerDiscount.id || null, // Seller voucher ID
+            discount_amount: sellerDiscount.discount_amount || 0, // Discount amount from voucher
             subtotal: sellerSubtotal
          });
 
          orderData.subtotal += sellerSubtotal;
          orderData.shipping_total += shippingFee;
+
+         // Add seller discount to total discount
+         if (sellerDiscount.discount_amount) {
+            orderData.discount_total += sellerDiscount.discount_amount;
+         }
       });
    }
 
    // Add platform discount
    if (window.platformDiscount) {
-      orderData.platform_discount_type = window.platformDiscount.type;
-      orderData.platform_discount_value = window.platformDiscount.value;
+      orderData.voucher_id = window.platformDiscount.id; // Voucher ID for tracking
 
       // Calculate platform discount amount
+      let platformDiscountAmount = 0;
       if (window.platformDiscount.type === 'percent') {
-         orderData.discount_total = Math.round(orderData.subtotal * window.platformDiscount.value / 100);
+         platformDiscountAmount = Math.round(orderData.subtotal * window.platformDiscount.value / 100);
       } else if (window.platformDiscount.type === 'fixed') {
-         orderData.discount_total = window.platformDiscount.value;
+         platformDiscountAmount = window.platformDiscount.value;
       }
+
+      // Add platform discount to total discount
+      orderData.discount_total += platformDiscountAmount;
    }
 
    // Calculate grand total

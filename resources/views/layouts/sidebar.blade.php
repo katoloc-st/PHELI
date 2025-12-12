@@ -35,6 +35,16 @@
                                  <i class="fas fa-shopping-cart mr-2"></i>Giỏ hàng
                               </a>
                            </li>
+                           <li class="nav-item">
+                              <a class="nav-link {{ request()->routeIs('orders.*') && !request()->routeIs('invoice.*') ? 'active text-success' : '' }}" href="{{ route('orders.index') }}">
+                                 <i class="fas fa-shopping-bag mr-2"></i>Đơn hàng của tôi
+                              </a>
+                           </li>
+                           <li class="nav-item">
+                              <a class="nav-link {{ request()->routeIs('invoice.*') ? 'active text-success' : '' }}" href="{{ route('invoice.index') }}">
+                                 <i class="fas fa-file-invoice mr-2"></i>Xuất hóa đơn
+                              </a>
+                           </li>
                         </ul>
                      </div>
                   </div>
