@@ -1,43 +1,42 @@
 @echo off
-chcp 65001 >nul
 setlocal enabledelayedexpansion
 
-:: PheLi - Script tự động cài đặt và cập nhật với Docker
-:: Sử dụng: setup.bat
+:: PheLi - Script tu dong cai dat va cap nhat voi Docker
+:: Su dung: setup.bat
 
 echo ==========================================
-echo   PheLi - Hệ thống quản lý phế liệu
-echo   Cài đặt và cập nhật tự động
+echo   PheLi - He thong quan ly phe lieu
+echo   Cai dat va cap nhat tu dong
 echo ==========================================
 echo.
 
-:: Kiểm tra Docker đã cài đặt chưa
+:: Kiem tra Docker da cai dat chua
 docker --version >nul 2>&1
 if errorlevel 1 (
-    echo ❌ Docker chưa được cài đặt!
-    echo Vui lòng cài đặt Docker Desktop từ: https://www.docker.com/products/docker-desktop
+    echo [ERROR] Docker chua duoc cai dat!
+    echo Vui long cai dat Docker Desktop tu: https://www.docker.com/products/docker-desktop
     pause
     exit /b 1
 )
 
 docker-compose --version >nul 2>&1
 if errorlevel 1 (
-    echo ❌ Docker Compose chưa được cài đặt!
-    echo Vui lòng cài đặt Docker Compose
+    echo [ERROR] Docker Compose chua duoc cai dat!
+    echo Vui long cai dat Docker Compose
     pause
     exit /b 1
 )
 
-echo ✅ Docker và Docker Compose đã sẵn sàng
+echo [OK] Docker va Docker Compose da san sang
 echo.
 
-:: Hỏi người dùng muốn làm gì
-echo Bạn muốn làm gì?
-echo 1^) Cài đặt mới (lần đầu tiên^)
-echo 2^) Cập nhật code mới nhất và khởi động lại
-echo 3^) Chỉ khởi động lại containers
+:: Hoi nguoi dung muon lam gi
+echo Ban muon lam gi?
+echo 1) Cai dat moi (lan dau tien)
+echo 2) Cap nhat code moi nhat va khoi dong lai
+echo 3) Chi khoi dong lai containers
 echo.
-set /p choice="Chọn (1/2/3): "
+set /p choice="Chon (1/2/3): "
 
 if "%choice%"=="1" goto install
 if "%choice%"=="2" goto update
@@ -46,129 +45,129 @@ goto invalid
 
 :install
 echo.
-echo 📦 Bắt đầu cài đặt mới...
+echo [INSTALL] Bat dau cai dat moi...
 echo.
 
-:: Tạo file .env nếu chưa có
+:: Tao file .env neu chua co
 if not exist ".env" (
-    echo 📝 Tạo file .env...
+    echo [STEP] Tao file .env...
     copy .env.docker .env
 )
 
-:: Dừng và xóa containers cũ (nếu có)
-echo 🧹 Dọn dẹp containers cũ...
+:: Dung va xoa containers cu (neu co)
+echo [STEP] Don dep containers cu...
 docker-compose down -v
 
-:: Build và khởi động containers
-echo 🏗️  Build và khởi động Docker containers...
+:: Build va khoi dong containers
+echo [STEP] Build va khoi dong Docker containers...
 docker-compose up -d --build
 
-:: Chờ MySQL khởi động hoàn tất
-echo ⏳ Chờ database khởi động (30 giây^)...
+:: Cho MySQL khoi dong hoan tat
+echo [WAIT] Cho database khoi dong (30 giay)...
 timeout /t 30 /nobreak >nul
 
-:: Cài đặt dependencies
-echo 📚 Cài đặt PHP dependencies...
+:: Cai dat dependencies
+echo [STEP] Cai dat PHP dependencies...
 docker-compose exec -T app composer install --no-interaction --prefer-dist
 
 :: Generate key
-echo 🔑 Generate application key...
+echo [STEP] Generate application key...
 docker-compose exec -T app php artisan key:generate
 
-:: Chạy migrations và seeders
-echo 🗄️  Chạy database migrations và seeders...
+:: Chay migrations va seeders
+echo [STEP] Chay database migrations va seeders...
 docker-compose exec -T app php artisan migrate --force
 docker-compose exec -T app php artisan db:seed --force
 
-:: Tạo symbolic link cho storage
-echo 🔗 Tạo storage link...
+:: Tao symbolic link cho storage
+echo [STEP] Tao storage link...
 docker-compose exec -T app php artisan storage:link
 
 :: Clear cache
-echo 🧹 Clear cache...
+echo [STEP] Clear cache...
 docker-compose exec -T app php artisan cache:clear
 docker-compose exec -T app php artisan config:clear
 docker-compose exec -T app php artisan view:clear
 
 echo.
-echo ✅ Cài đặt hoàn tất!
+echo [SUCCESS] Cai dat hoan tat!
 goto finish
 
 :update
 echo.
-echo 🔄 Bắt đầu cập nhật...
+echo [UPDATE] Bat dau cap nhat...
 echo.
-echo ℹ️  Đảm bảo bạn đã pull code mới nhất (git pull)
+echo [INFO] Dam bao ban da pull code moi nhat (git pull)
 echo.
 
-:: Dừng containers
-echo 🛑 Dừng containers...
+:: Dung containers
+echo [STEP] Dung containers...
 docker-compose down
 
-:: Rebuild containers với code mới
-echo 🏗️  Rebuild containers với code mới...
+:: Rebuild containers voi code moi
+echo [STEP] Rebuild containers voi code moi...
 docker-compose up -d --build
 
-:: Chờ services khởi động
-echo ⏳ Chờ services khởi động (20 giây^)...
+:: Cho services khoi dong
+echo [WAIT] Cho services khoi dong (20 giay)...
 timeout /t 20 /nobreak >nul
 
-:: Cập nhật dependencies
-echo 📚 Cập nhật dependencies...
+:: Cap nhat dependencies
+echo [STEP] Cap nhat dependencies...
 docker-compose exec -T app composer install --no-interaction --prefer-dist
 
-:: Chạy migrations mới (nếu có)
-echo 🗄️  Chạy migrations mới...
+:: Chay migrations moi (neu co)
+echo [STEP] Chay migrations moi...
 docker-compose exec -T app php artisan migrate --force
 
 :: Clear cache
-echo 🧹 Clear cache...
+echo [STEP] Clear cache...
 docker-compose exec -T app php artisan cache:clear
 docker-compose exec -T app php artisan config:clear
 docker-compose exec -T app php artisan view:clear
 docker-compose exec -T app php artisan route:clear
 
 :: Optimize
-echo ⚡ Optimize application...
+echo [STEP] Optimize application...
 docker-compose exec -T app php artisan optimize
 
 echo.
-echo ✅ Cập nhật hoàn tất!
+echo [SUCCESS] Cap nhat hoan tat!
 goto finish
 
 :restart
 echo.
-echo 🔄 Khởi động lại containers...
+echo [RESTART] Khoi dong lai containers...
 docker-compose restart
-echo ✅ Hoàn tất!
+echo [SUCCESS] Hoan tat!
 goto finish
 
 :invalid
-echo ❌ Lựa chọn không hợp lệ!
+echo [ERROR] Lua chon khong hop le!
 pause
 exit /b 1
 
 :finish
 echo.
 echo ==========================================
-echo   🎉 Hoàn thành!
+echo   HOAN THANH!
 echo ==========================================
 echo.
-echo 📍 Truy cập ứng dụng tại:
-echo    🌐 Website: http://localhost:8000
-echo    💾 phpMyAdmin: http://localhost:8080
+echo Truy cap ung dung tai:
+echo    Website: http://localhost:8000
+echo    phpMyAdmin: http://localhost:8080
 echo.
-echo 👤 Tài khoản đăng nhập:
-echo    📧 Email: delivery@staff.com
-echo    🔐 Password: password
+echo Tai khoan dang nhap:
+echo    Email: delivery@staff.com
+echo    Password: password
 echo.
-echo 📚 Các lệnh hữu ích:
+echo Cac lenh huu ich:
 echo    - Xem logs: docker-compose logs -f app
-echo    - Dừng app: docker-compose down
-echo    - Khởi động: docker-compose up -d
-echo    - Vào container: docker-compose exec app bash
+echo    - Dung app: docker-compose down
+echo    - Khoi dong: docker-compose up -d
+echo    - Vao container: docker-compose exec app bash
 echo.
-echo ❓ Cần trợ giúp? Xem file DOCKER.md
+echo Can tro giup? Xem file DOCKER.md
 echo ==========================================
 echo.
 pause
