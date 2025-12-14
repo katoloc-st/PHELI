@@ -35,4 +35,4 @@
 | 1   | 23520859 | Nguyễn Phúc Lộc        | https://github.com/katoloc-st     | 23520859@gm.uit.edu.vn |
 | 2   | 23520462 | Nguyễn Minh Hiển   | https://github.com/minhhien041205       | 23520462@gm.uit.edu.vn |
 | 3   | 23520843 | Võ Ngọc Hoàng Lân | https://github.com/VoNgocHoangLanUIT          | 23520843@gm.uit.edu.vn |
-| 4   | 23521273 | Võ Hồ Trung Quân  | https://github.com/CallmeElla1312 | 23521273@gm.uit.edu.vn |
+| 4   | 23521273 | Võ Hồ Trung Quân  | https://github.com/Quandtzzzz | 23521273@gm.uit.edu.vn |
