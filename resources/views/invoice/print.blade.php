@@ -208,6 +208,29 @@
             color: #991b1b;
         }
 
+        .item-status {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            display: inline-block;
+            margin-top: 4px;
+        }
+
+        .item-cancelled {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+
+        .badge-info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
         @media print {
             body {
                 padding: 0;
@@ -282,6 +305,7 @@
                         $allCompleted = $order->items->every(fn($item) => $item->status === 'completed');
                         $allCancelled = $order->items->every(fn($item) => $item->status === 'cancelled');
                         $hasProcessing = $order->items->contains(fn($item) => $item->status === 'processing');
+                        $hasAwaitingPickup = $order->items->contains(fn($item) => $item->status === 'awaiting_pickup');
                         $hasPending = $order->items->contains(fn($item) => $item->status === 'pending');
 
                         if ($allCompleted) {
@@ -292,7 +316,10 @@
                             $statusText = 'Đã hủy';
                         } elseif ($hasProcessing) {
                             $badgeClass = 'badge-info';
-                            $statusText = 'Đang xử lý';
+                            $statusText = 'Chờ giao hàng';
+                        } elseif ($hasAwaitingPickup) {
+                            $badgeClass = 'badge-primary';
+                            $statusText = 'Chờ lấy hàng';
                         } elseif ($hasPending) {
                             $badgeClass = 'badge-warning';
                             $statusText = 'Chờ xử lý';
@@ -311,15 +338,35 @@
             <thead>
                 <tr>
                     <th width="5%">#</th>
-                    <th width="40%">Sản phẩm</th>
-                    <th width="15%" class="text-center">Số lượng</th>
-                    <th width="20%" class="text-right">Đơn giá</th>
+                    <th width="35%">Sản phẩm</th>
+                    <th width="15%" class="text-center">Trạng thái</th>
+                    <th width="10%" class="text-center">Số lượng</th>
+                    <th width="15%" class="text-right">Đơn giá</th>
                     <th width="20%" class="text-right">Thành tiền</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($order->items as $index => $item)
-                <tr>
+                @php
+                    $itemBadgeClass = match($item->status) {
+                        'completed' => 'badge-success',
+                        'awaiting_pickup' => 'badge-primary',
+                        'processing' => 'badge-info',
+                        'cancelled' => 'badge-danger',
+                        default => 'badge-warning'
+                    };
+
+                    $itemStatusText = match($item->status) {
+                        'completed' => 'Hoàn thành',
+                        'awaiting_pickup' => 'Chờ lấy hàng',
+                        'processing' => 'Chờ giao hàng',
+                        'cancelled' => 'Đã hủy',
+                        default => 'Chờ xử lý'
+                    };
+
+                    $isCancelled = $item->status === 'cancelled';
+                @endphp
+                <tr class="{{ $isCancelled ? 'item-cancelled' : '' }}">
                     <td class="text-center">{{ $index + 1 }}</td>
                     <td>
                         <div class="item-name">{{ $item->post->title }}</div>
@@ -327,6 +374,9 @@
                             Loại: {{ $item->post->wasteType->name }} |
                             Người bán: {{ $item->post->user->company_name ?? $item->post->user->name }}
                         </div>
+                    </td>
+                    <td class="text-center">
+                        <span class="status-badge item-status {{ $itemBadgeClass }}">{{ $itemStatusText }}</span>
                     </td>
                     <td class="text-center">{{ number_format($item->quantity) }} kg</td>
                     <td class="text-right">{{ number_format($item->price) }} ₫/kg</td>
@@ -337,25 +387,74 @@
         </table>
 
         <!-- Summary -->
+        @php
+            // Tính tạm tính: tổng tiền các item có trạng thái khác hủy
+            $nonCancelledItems = $order->items->filter(fn($item) => $item->status !== 'cancelled');
+            $recalculatedSubtotal = $nonCancelledItems->sum(fn($item) => $item->price * $item->quantity);
+
+            // Lấy các items đang hoạt động (processing/completed) cho discount
+            $activeItems = $order->items->filter(fn($item) => in_array($item->status, ['processing', 'completed']));
+
+            // Tính phí ship: kiểm tra items bị hủy
+            $cancelledItems = $order->items->filter(fn($item) => $item->status === 'cancelled');
+            $recalculatedShipping = $order->shipping_total;
+
+            foreach ($cancelledItems as $cancelledItem) {
+                // Kiểm tra xem có item khác cùng order_id và seller_id không (ghép đơn)
+                $hasSameSellerItem = $order->items->contains(function($item) use ($cancelledItem) {
+                    return $item->id !== $cancelledItem->id
+                        && $item->seller_id === $cancelledItem->seller_id
+                        && in_array($item->status, ['pending', 'processing', 'completed']);
+                });
+
+                // Nếu không có item khác cùng seller (không phải ghép đơn), trừ phí ship
+                if (!$hasSameSellerItem) {
+                    $recalculatedShipping -= $cancelledItem->shipping_fee;
+                }
+            }
+
+            // Tính discount: dùng trực tiếp từ order (đã được cập nhật khi có hủy)
+            $recalculatedDiscount = $order->discount_total;
+
+            // Tính deposit: dùng trực tiếp từ order (đã được cập nhật khi có hủy)
+            $recalculatedDeposit = $order->deposit_amount;
+
+            $recalculatedGrandTotal = $recalculatedSubtotal + $recalculatedShipping - $recalculatedDiscount + $recalculatedDeposit;
+        @endphp
         <div class="summary">
             <div class="summary-table">
+                <div class="summary-row" style="border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 8px;">
+                    <span class="summary-label">Tổng sản phẩm:</span>
+                    <span class="summary-value">
+                        {{ $order->items->count() }} sản phẩm
+                        @if($cancelledItems->count() > 0)
+                            <span style="color: #ef4444; font-size: 12px; font-weight: normal;">({{ $cancelledItems->count() }} đã hủy)</span>
+                        @endif
+                    </span>
+                </div>
                 <div class="summary-row">
                     <span class="summary-label">Tạm tính:</span>
-                    <span class="summary-value">{{ number_format($order->subtotal) }} ₫</span>
+                    <span class="summary-value">{{ number_format($recalculatedSubtotal) }} ₫</span>
                 </div>
                 <div class="summary-row">
                     <span class="summary-label">Phí vận chuyển:</span>
-                    <span class="summary-value">{{ number_format($order->shipping_total) }} ₫</span>
+                    <span class="summary-value">{{ number_format($recalculatedShipping) }} ₫</span>
                 </div>
-                @if($order->discount_total > 0)
+                @if($recalculatedDiscount > 0)
                 <div class="summary-row">
                     <span class="summary-label">Giảm giá:</span>
-                    <span class="summary-value" style="color: #ef4444;">-{{ number_format($order->discount_total) }} ₫</span>
+                    <span class="summary-value" style="color: #ef4444;">-{{ number_format($recalculatedDiscount) }} ₫</span>
+                </div>
+                @endif
+                @if($recalculatedDeposit > 0)
+                <div class="summary-row">
+                    <span class="summary-label">Đặt cọc:</span>
+                    <span class="summary-value" style="color: #f59e0b;">{{ number_format($recalculatedDeposit) }} ₫</span>
                 </div>
                 @endif
                 <div class="summary-row total">
                     <span class="summary-label">Tổng cộng:</span>
-                    <span class="summary-value">{{ number_format($order->grand_total) }} ₫</span>
+                    <span class="summary-value">{{ number_format($recalculatedGrandTotal) }} ₫</span>
                 </div>
             </div>
         </div>

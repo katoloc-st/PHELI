@@ -40,6 +40,8 @@ class AuthController extends Controller
                     return redirect()->route('scrap-dealer.dashboard');
                 case 'recycling_plant':
                     return redirect()->route('recycling-plant.dashboard');
+                case 'delivery_staff':
+                    return redirect()->route('delivery.index');
                 default:
                     return redirect()->route('dashboard');
             }
@@ -61,7 +63,7 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'phone' => 'required|string|max:20',
-            'role' => 'required|in:waste_company,scrap_dealer,recycling_plant',
+            'role' => 'required|in:waste_company,scrap_dealer,recycling_plant,delivery_staff',
             'company_name' => 'nullable|string|max:255',
             'address' => 'nullable|string|max:500',
             'description' => 'nullable|string|max:1000',
@@ -104,6 +106,8 @@ class AuthController extends Controller
                 return redirect()->route('scrap-dealer.dashboard');
             case 'recycling_plant':
                 return redirect()->route('recycling-plant.dashboard');
+            case 'delivery_staff':
+                return redirect()->route('delivery.index');
             default:
                 return redirect()->route('index');
         }

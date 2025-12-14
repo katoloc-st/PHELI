@@ -18,19 +18,19 @@
             </div>
             <div class="col-auto">
                 <!-- Filter Buttons -->
-                <a href="{{ route('orders.index') }}" class="btn {{ !request('status') ? 'btn-light' : 'btn-outline-light' }} mr-2">
-                    <i class="fas fa-list"></i> Tất cả
-                </a>
-                <a href="{{ route('orders.index', ['status' => 'pending']) }}" class="btn {{ request('status') == 'pending' ? 'btn-warning' : 'btn-outline-light' }} mr-2">
+                <a href="{{ route('orders.index', ['status' => 'pending']) }}" class="btn {{ request('status') == 'pending' ? 'btn-light' : 'btn-outline-light' }} mr-2">
                     <i class="fas fa-clock"></i> Chờ xử lý
                 </a>
-                <a href="{{ route('orders.index', ['status' => 'processing']) }}" class="btn {{ request('status') == 'processing' ? 'btn-info' : 'btn-outline-light' }} mr-2">
-                    <i class="fas fa-sync"></i> Đang xử lý
+                <a href="{{ route('orders.index', ['status' => 'awaiting_pickup']) }}" class="btn {{ request('status') == 'awaiting_pickup' ? 'btn-light' : 'btn-outline-light' }} mr-2">
+                    <i class="fas fa-box"></i> Chờ lấy
                 </a>
-                <a href="{{ route('orders.index', ['status' => 'completed']) }}" class="btn {{ request('status') == 'completed' ? 'btn-success' : 'btn-outline-light' }} mr-2">
+                <a href="{{ route('orders.index', ['status' => 'processing']) }}" class="btn {{ request('status') == 'processing' ? 'btn-light' : 'btn-outline-light' }} mr-2">
+                    <i class="fas fa-truck"></i> Chờ giao
+                </a>
+                <a href="{{ route('orders.index', ['status' => 'completed']) }}" class="btn {{ request('status') == 'completed' ? 'btn-light' : 'btn-outline-light' }} mr-2">
                     <i class="fas fa-check"></i> Hoàn thành
                 </a>
-                <a href="{{ route('orders.index', ['status' => 'cancelled']) }}" class="btn {{ request('status') == 'cancelled' ? 'btn-danger' : 'btn-outline-light' }} mr-2">
+                <a href="{{ route('orders.index', ['status' => 'cancelled']) }}" class="btn {{ request('status') == 'cancelled' ? 'btn-light' : 'btn-outline-light' }}">
                     <i class="fas fa-times"></i> Đã hủy
                 </a>
             </div>
@@ -77,13 +77,15 @@
                                                         $badgeClass = match($item->status) {
                                                             'completed' => 'badge-success',
                                                             'processing' => 'badge-info',
+                                                            'awaiting_pickup' => 'badge-primary',
                                                             'cancelled' => 'badge-danger',
                                                             default => 'badge-warning'
                                                         };
 
                                                         $statusText = match($item->status) {
                                                             'completed' => 'Hoàn thành',
-                                                            'processing' => 'Đang xử lý',
+                                                            'processing' => 'Chờ giao hàng',
+                                                            'awaiting_pickup' => 'Chờ lấy hàng',
                                                             'cancelled' => 'Đã hủy',
                                                             default => 'Chờ xử lý'
                                                         };
@@ -260,6 +262,11 @@
 .badge-warning {
     background-color: #fbbf24;
     color: #78350f;
+}
+
+.badge-primary {
+    background-color: #3b82f6;
+    color: #ffffff;
 }
 
 .badge-info {

@@ -1,61 +1,221 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# PheLi - Hệ thống quản lý phế liệu
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## Giới thiệu
+Hệ thống quản lý phế liệu được xây dựng bằng Laravel, giúp quản lý các đơn hàng, giao dịch và vận chuyển phế liệu.
 
-## About Laravel
+## Yêu cầu hệ thống
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### Không dùng Docker
+- PHP >= 8.2
+- Composer
+- MySQL >= 8.0
+- Node.js & NPM
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### Sử dụng Docker (Khuyến nghị)
+- Docker Desktop (Windows/Mac) hoặc Docker Engine (Linux)
+- Docker Compose
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Cài đặt
 
-## Learning Laravel
+### ⚡ Cách nhanh nhất (Khuyến nghị)
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+**Windows:**
+```bash
+setup.bat
+```
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+**Linux/Mac:**
+```bash
+bash setup.sh
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Chọn option `1` để cài đặt mới, hoặc `2` để cập nhật code mới nhất.
 
-## Laravel Sponsors
+Script sẽ tự động:
+- ✅ Khởi động Docker containers
+- ✅ Cài đặt dependencies
+- ✅ Setup database và seed dữ liệu
+- ✅ Clear cache và optimize
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+📖 **Xem thêm**: 
+- [Quick Start Guide](QUICKSTART.md) - Hướng dẫn nhanh
+- [Docker Guide](DOCKER.md) - Hướng dẫn chi tiết Docker
 
-### Premium Partners
+---
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### Cách 1: Sử dụng Docker (Thủ công)
 
-## Contributing
+1. **Clone repository**
+```bash
+git clone <repository-url>
+cd PHELIEU
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+2. **Sao chép file cấu hình**
+```bash
+cp .env.docker .env
+```
 
-## Code of Conduct
+3. **Khởi động Docker containers**
+```bash
+docker-compose up -d
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+4. **Cài đặt và khởi tạo database**
+```bash
+docker-compose exec app composer install
+docker-compose exec app php artisan key:generate
+docker-compose exec app php artisan migrate --seed
+docker-compose exec app php artisan storage:link
+```
 
-## Security Vulnerabilities
+5. **Truy cập ứng dụng**
+- Website: http://localhost:8000
+- phpMyAdmin: http://localhost:8080
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Cách 2: Cài đặt thủ công (Không dùng Docker)
+
+1. **Clone repository**
+```bash
+git clone <repository-url>
+cd PheLi
+```
+
+2. **Cài đặt dependencies**
+```bash
+composer install
+npm install
+```
+
+3. **Cấu hình môi trường**
+```bash
+cp .env.example .env
+php artisan key:generate
+```
+
+4. **Cấu hình database**
+Chỉnh sửa file `.env`:
+```
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=pheli
+DB_USERNAME=root
+DB_PASSWORD=your_password
+```
+
+5. **Chạy migration và seeder**
+```bash
+php artisan migrate --seed
+php artisan storage:link
+```
+
+6. **Build assets**
+```bash
+npm run build
+```
+
+7. **Khởi động server**
+```bash
+php artisan serve
+```
+
+Truy cập: http://localhost:8000
+
+## Cập nhật code mới
+
+Khi có code mới từ repository:
+
+```bash
+# 1. Pull code mới nhất
+git pull
+
+# 2. Chạy script cập nhật
+```
+
+**Windows:**
+```bash
+setup.bat
+# Chọn option 2
+```
+
+**Linux/Mac:**
+```bash
+bash setup.sh
+# Chọn option 2
+```
+
+Script sẽ tự động rebuild containers, update dependencies và chạy migrations mới.
+
+---
+
+## Tài khoản mặc định
+
+Sau khi chạy seeder, bạn có thể đăng nhập với các tài khoản:
+
+### Nhân viên giao hàng
+- Email: `delivery@staff.com`
+- Password: `password`
+
+## Tính năng chính
+
+- 🏢 Quản lý người dùng (công ty, đại lý, nhà máy tái chế)
+- 📦 Quản lý bài đăng phế liệu
+- 🛒 Giỏ hàng và đặt hàng
+- 💰 Quản lý đơn hàng và giao dịch
+- 🚚 Quản lý vận chuyển cho nhân viên giao hàng
+- 📊 Báo cáo và thống kê
+- ⭐ Đánh giá và nhận xét
+
+## Các lệnh hữu ích
+
+### Với Docker
+```bash
+# Xem logs
+docker-compose logs app
+
+# Chạy migration
+docker-compose exec app php artisan migrate
+
+# Chạy seeder
+docker-compose exec app php artisan db:seed
+
+# Clear cache
+docker-compose exec app php artisan cache:clear
+
+# Dừng containers
+docker-compose down
+```
+
+### Không dùng Docker
+```bash
+# Chạy migration
+php artisan migrate
+
+# Chạy seeder
+php artisan db:seed
+
+# Clear cache
+php artisan cache:clear
+php artisan config:clear
+php artisan view:clear
+```
+
+## Troubleshooting
+
+### Lỗi permission (Docker)
+```bash
+docker-compose exec app chown -R www-data:www-data /var/www/html/storage
+docker-compose exec app chmod -R 755 /var/www/html/storage
+```
+
+### Port đã được sử dụng
+Thay đổi port trong `docker-compose.yml` hoặc dừng service đang chiếm port.
+
+### Database connection error
+Kiểm tra cấu hình trong file `.env` và đảm bảo MySQL đang chạy.
 
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+

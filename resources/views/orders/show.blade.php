@@ -172,10 +172,16 @@
                                 <span>Phí vận chuyển:</span>
                                 <span>{{ number_format($order->shipping_total) }} VNĐ</span>
                             </div>
-                            @if($order->discount_total > 0)
-                                <div class="d-flex justify-content-between mb-2 text-success">
+                            @if(floatval($order->discount_total) > 0)
+                                <div class="d-flex justify-content-between mb-2 text-danger">
                                     <span>Giảm giá:</span>
                                     <span>-{{ number_format($order->discount_total) }} VNĐ</span>
+                                </div>
+                            @endif
+                            @if(floatval($order->deposit_amount) > 0)
+                                <div class="d-flex justify-content-between mb-2 text-warning">
+                                    <span>Đặt cọc:</span>
+                                    <span>{{ number_format($order->deposit_amount) }} VNĐ</span>
                                 </div>
                             @endif
                             <hr>

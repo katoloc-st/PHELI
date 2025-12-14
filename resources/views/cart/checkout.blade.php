@@ -2203,7 +2203,7 @@ function updateShipping(sellerId) {
       let methodName = '';
       let methodDate = '';
       let methodNote = '';
-      
+
       // Calculate delivery dates based on current date
       const today = new Date();
       let startDays, endDays;
@@ -2228,19 +2228,19 @@ function updateShipping(sellerId) {
             methodNote = 'Giao hàng hỏa tốc trong 2-3 ngày.';
             break;
       }
-      
+
       // Calculate delivery date range
       const startDate = new Date(today);
       startDate.setDate(today.getDate() + startDays);
       const endDate = new Date(today);
       endDate.setDate(today.getDate() + endDays);
-      
+
       const formatDate = (date) => {
          const day = date.getDate();
          const month = date.getMonth() + 1;
          return `${day}/${month}`;
       };
-      
+
       methodDate = `Nhận từ ${formatDate(startDate)} - ${formatDate(endDate)}`;
 
       // Update content
@@ -2358,6 +2358,7 @@ $('#checkoutForm').on('submit', function(e) {
       subtotal: 0,
       shipping_total: 0,
       discount_total: 0,
+      deposit_amount: 0,
       grand_total: 0
    };
 
@@ -2383,12 +2384,21 @@ $('#checkoutForm').on('submit', function(e) {
 
          items.forEach(item => {
             const itemPrice = item.post.price;
-            sellerSubtotal += itemPrice * item.quantity;
+            const itemSubtotal = itemPrice * item.quantity;
+            sellerSubtotal += itemSubtotal;
+
+            // Calculate deposit for this item (7.5% for scrap_dealer)
+            let itemDeposit = 0;
+            @if(auth()->check() && auth()->user()->role === 'scrap_dealer')
+               itemDeposit = Math.round(itemSubtotal * 0.075);
+            @endif
+
             sellerItems.push({
                post_id: item.post.id,
                quantity: item.quantity,
                price: itemPrice,
-               subtotal: itemPrice * item.quantity
+               subtotal: itemSubtotal,
+               deposit_amount: itemDeposit
             });
          });
 
@@ -2429,8 +2439,13 @@ $('#checkoutForm').on('submit', function(e) {
       orderData.discount_total += platformDiscountAmount;
    }
 
+   // Calculate deposit amount (7.5% for scrap_dealer users)
+   @if(auth()->check() && auth()->user()->role === 'scrap_dealer')
+      orderData.deposit_amount = Math.round(orderData.subtotal * 0.075);
+   @endif
+
    // Calculate grand total
-   orderData.grand_total = orderData.subtotal + orderData.shipping_total - orderData.discount_total;
+   orderData.grand_total = orderData.subtotal + orderData.shipping_total - orderData.discount_total + orderData.deposit_amount;
 
    // Validate cart has items
    if (!orderData.sellers || orderData.sellers.length === 0) {

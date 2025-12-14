@@ -25,6 +25,7 @@ class Order extends Model
         'shipping_total',
         'discount_total',
         'grand_total',
+        'deposit_amount',
         'payment_method',
         'voucher_id',
         'notes',
@@ -35,6 +36,7 @@ class Order extends Model
         'shipping_total' => 'decimal:2',
         'discount_total' => 'decimal:2',
         'grand_total' => 'decimal:2',
+        'deposit_amount' => 'decimal:2',
     ];
 
     /**

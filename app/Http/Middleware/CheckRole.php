@@ -14,13 +14,22 @@ class CheckRole
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
-    public function handle(Request $request, Closure $next, string $role): Response
+    public function handle(Request $request, Closure $next, string ...$roles): Response
     {
         if (!Auth::check()) {
+            // Nếu là AJAX request, trả về 401
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['message' => 'Unauthenticated.'], 401);
+            }
             return redirect()->route('login');
         }
 
-        if (Auth::user()->role !== $role) {
+        // Kiểm tra xem user có role trong danh sách roles được phép không
+        if (!in_array(Auth::user()->role, $roles)) {
+            // Nếu là AJAX request, trả về 403
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['message' => 'Bạn không có quyền truy cập.'], 403);
+            }
             abort(403, 'Bạn không có quyền truy cập trang này.');
         }
 

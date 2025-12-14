@@ -10,6 +10,7 @@
                                  <i class="fas fa-user mr-2"></i>Thông tin người đại diện
                               </a>
                            </li>
+                           @if(Auth::check() && Auth::user()->role !== 'delivery_staff')
                            <li class="nav-item">
                               <a class="nav-link {{ request()->routeIs('company-profile.show') ? 'active text-success' : '' }}" href="{{ route('company-profile.show') }}">
                                  <i class="fas fa-building mr-2"></i>Thông tin công ty
@@ -31,6 +32,20 @@
                               </a>
                            </li>
                            <li class="nav-item">
+                              <a class="nav-link {{ request()->routeIs('sales.*') ? 'active text-success' : '' }}" href="{{ route('sales.index') }}">
+                                 <i class="fas fa-store mr-2"></i>Quản lý yêu cầu mua hàng
+                              </a>
+                           </li>
+                           @endif
+                           @if(Auth::check() && Auth::user()->role === 'delivery_staff')
+                           <li class="nav-item">
+                              <a class="nav-link {{ request()->routeIs('delivery.*') ? 'active text-success' : '' }}" href="{{ route('delivery.index') }}">
+                                 <i class="fas fa-truck mr-2"></i>Quản lý giao hàng
+                              </a>
+                           </li>
+                           @endif
+                           @if(Auth::check() && Auth::user()->role !== 'delivery_staff')
+                           <li class="nav-item">
                               <a class="nav-link {{ request()->routeIs('cart.index') ? 'active text-success' : '' }}" href="{{ route('cart.index') }}">
                                  <i class="fas fa-shopping-cart mr-2"></i>Giỏ hàng
                               </a>
@@ -45,6 +60,7 @@
                                  <i class="fas fa-file-invoice mr-2"></i>Xuất hóa đơn
                               </a>
                            </li>
+                           @endif
                         </ul>
                      </div>
                   </div>

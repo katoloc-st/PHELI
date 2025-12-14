@@ -14,17 +14,24 @@ class OrderItem extends Model
         'quantity',
         'price',
         'subtotal',
+        'deposit_amount',
         'shipping_method',
         'shipping_fee',
+        'discount_amount',
         'note',
         'voucher_id',
         'status',
+        'cancelled_by',
+        'cancelled_at',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
         'subtotal' => 'decimal:2',
+        'deposit_amount' => 'decimal:2',
         'shipping_fee' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
+        'cancelled_at' => 'datetime',
     ];
 
     /**

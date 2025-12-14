@@ -62,54 +62,82 @@ Route::middleware('auth')->group(function () {
         Route::get('/recycling-plant/buy', [RecyclingPlantController::class, 'buyWaste'])->name('recycling-plant.buy');
     });
 
-    // Post Management Routes (Common for all roles)
-    Route::resource('posts', PostController::class)->except(['index', 'show']);
-    Route::get('/posts/buy/{post}', [PostController::class, 'buy'])->name('posts.buy');
-    Route::post('/posts/purchase/{post}', [PostController::class, 'purchase'])->name('posts.purchase');
-    Route::get('/my-posts', [PostController::class, 'myPosts'])->name('posts.my-posts');
+    // Post Management Routes (Common for all roles except delivery_staff)
+    Route::middleware('role:waste_company,scrap_dealer,recycling_plant')->group(function () {
+        Route::resource('posts', PostController::class)->except(['index', 'show']);
+        Route::get('/posts/buy/{post}', [PostController::class, 'buy'])->name('posts.buy');
+        Route::post('/posts/purchase/{post}', [PostController::class, 'purchase'])->name('posts.purchase');
+        Route::get('/my-posts', [PostController::class, 'myPosts'])->name('posts.my-posts');
+    });
 
     // API for getting waste type price
     Route::get('/api/waste-type/{wasteTypeId}/price', [PostController::class, 'getWasteTypePrice'])->name('api.waste-type.price');
 
-    // Review Routes
-    Route::post('/posts/{post}/reviews', [\App\Http\Controllers\ReviewController::class, 'store'])->name('reviews.store');
-    Route::put('/reviews/{review}', [\App\Http\Controllers\ReviewController::class, 'update'])->name('reviews.update');
-    Route::delete('/reviews/{review}', [\App\Http\Controllers\ReviewController::class, 'destroy'])->name('reviews.destroy');
+    // Review Routes (except delivery_staff)
+    Route::middleware('role:waste_company,scrap_dealer,recycling_plant')->group(function () {
+        Route::post('/posts/{post}/reviews', [\App\Http\Controllers\ReviewController::class, 'store'])->name('reviews.store');
+        Route::put('/reviews/{review}', [\App\Http\Controllers\ReviewController::class, 'update'])->name('reviews.update');
+        Route::delete('/reviews/{review}', [\App\Http\Controllers\ReviewController::class, 'destroy'])->name('reviews.destroy');
+    });
 
-    // Collection Point Routes
-    Route::resource('collection-points', \App\Http\Controllers\CollectionPointController::class);
-    Route::get('/api/user-collection-points', [\App\Http\Controllers\CollectionPointController::class, 'getUserCollectionPoints'])->name('api.user-collection-points');
+    // Collection Point Routes (except delivery_staff)
+    Route::middleware('role:waste_company,scrap_dealer,recycling_plant')->group(function () {
+        Route::resource('collection-points', \App\Http\Controllers\CollectionPointController::class);
+        Route::get('/api/user-collection-points', [\App\Http\Controllers\CollectionPointController::class, 'getUserCollectionPoints'])->name('api.user-collection-points');
+    });
 
     // User Profile Routes
     Route::get('/profile', [UserProfileController::class, 'show'])->name('profile.show');
     Route::put('/profile', [UserProfileController::class, 'update'])->name('profile.update');
 
-    // Company Profile Routes
-    Route::get('/company-profile', [CompanyProfileController::class, 'show'])->name('company-profile.show');
-    Route::put('/company-profile', [CompanyProfileController::class, 'update'])->name('company-profile.update');
+    // Company Profile Routes (except delivery_staff)
+    Route::middleware('role:waste_company,scrap_dealer,recycling_plant')->group(function () {
+        Route::get('/company-profile', [CompanyProfileController::class, 'show'])->name('company-profile.show');
+        Route::put('/company-profile', [CompanyProfileController::class, 'update'])->name('company-profile.update');
+    });
 
-    // Cart Routes
-    Route::get('/cart', [\App\Http\Controllers\CartController::class, 'index'])->name('cart.index');
-    Route::get('/cart/checkout', function() {
-        return view('cart.checkout');
-    })->name('cart.checkout');
-    Route::get('/api/cart', [\App\Http\Controllers\CartController::class, 'getCart'])->name('cart.get');
-    Route::post('/api/cart/add', [\App\Http\Controllers\CartController::class, 'addToCart'])->name('cart.add');
-    Route::put('/api/cart/{id}/update', [\App\Http\Controllers\CartController::class, 'updateQuantity'])->name('cart.update');
-    Route::delete('/api/cart/{id}', [\App\Http\Controllers\CartController::class, 'removeFromCart'])->name('cart.remove');
-    Route::delete('/api/cart', [\App\Http\Controllers\CartController::class, 'clearCart'])->name('cart.clear');
+    // Cart Routes (except delivery_staff)
+    Route::middleware('role:waste_company,scrap_dealer,recycling_plant')->group(function () {
+        Route::get('/cart', [\App\Http\Controllers\CartController::class, 'index'])->name('cart.index');
+        Route::get('/cart/checkout', function() {
+            return view('cart.checkout');
+        })->name('cart.checkout');
+        Route::get('/api/cart', [\App\Http\Controllers\CartController::class, 'getCart'])->name('cart.get');
+        Route::post('/api/cart/add', [\App\Http\Controllers\CartController::class, 'addToCart'])->name('cart.add');
+        Route::put('/api/cart/{id}/update', [\App\Http\Controllers\CartController::class, 'updateQuantity'])->name('cart.update');
+        Route::delete('/api/cart/{id}', [\App\Http\Controllers\CartController::class, 'removeFromCart'])->name('cart.remove');
+        Route::delete('/api/cart', [\App\Http\Controllers\CartController::class, 'clearCart'])->name('cart.clear');
+    });
 
-    // Order Routes
-    Route::resource('orders', \App\Http\Controllers\OrderController::class);
+    // Order Routes (except delivery_staff)
+    Route::middleware('role:waste_company,scrap_dealer,recycling_plant')->group(function () {
+        Route::resource('orders', \App\Http\Controllers\OrderController::class);
+    });
 
-    // Invoice Routes
-    Route::get('/invoice', [\App\Http\Controllers\InvoiceController::class, 'index'])->name('invoice.index');
-    Route::get('/invoice/{id}/print', [\App\Http\Controllers\InvoiceController::class, 'print'])->name('invoice.print');
-    Route::get('/invoice/{id}/pdf', [\App\Http\Controllers\InvoiceController::class, 'pdf'])->name('invoice.pdf');
+    // Sales Management Routes (for sellers except delivery_staff)
+    Route::middleware('role:waste_company,scrap_dealer,recycling_plant')->group(function () {
+        Route::get('/sales', [\App\Http\Controllers\OrderController::class, 'salesIndex'])->name('sales.index');
+        Route::post('/sales/{orderItem}/update-status', [\App\Http\Controllers\OrderController::class, 'updateStatus'])->name('sales.updateStatus');
+    });
 
-    // Voucher Routes
-    Route::post('/api/voucher/apply', [\App\Http\Controllers\VoucherController::class, 'apply'])->name('voucher.apply');
-    Route::post('/api/voucher/remove', [\App\Http\Controllers\VoucherController::class, 'remove'])->name('voucher.remove');
+    // Delivery Management Routes (for delivery staff only)
+    Route::middleware('role:delivery_staff')->group(function () {
+        Route::get('/delivery', [\App\Http\Controllers\OrderController::class, 'deliveryIndex'])->name('delivery.index');
+        Route::post('/delivery/{orderItem}/update-status', [\App\Http\Controllers\OrderController::class, 'updateDeliveryStatus'])->name('delivery.updateStatus');
+    });
+
+    // Invoice Routes (except delivery_staff)
+    Route::middleware('role:waste_company,scrap_dealer,recycling_plant')->group(function () {
+        Route::get('/invoice', [\App\Http\Controllers\InvoiceController::class, 'index'])->name('invoice.index');
+        Route::get('/invoice/{id}/print', [\App\Http\Controllers\InvoiceController::class, 'print'])->name('invoice.print');
+        Route::get('/invoice/{id}/pdf', [\App\Http\Controllers\InvoiceController::class, 'pdf'])->name('invoice.pdf');
+    });
+
+    // Voucher Routes (except delivery_staff)
+    Route::middleware('role:waste_company,scrap_dealer,recycling_plant')->group(function () {
+        Route::post('/api/voucher/apply', [\App\Http\Controllers\VoucherController::class, 'apply'])->name('voucher.apply');
+        Route::post('/api/voucher/remove', [\App\Http\Controllers\VoucherController::class, 'remove'])->name('voucher.remove');
+    });
 });
 
 // Public post detail route (placed after all specific routes to avoid conflicts)
