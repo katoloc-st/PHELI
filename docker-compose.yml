@@ -1,0 +1,91 @@
+services:
+  # PHP Service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pheli_app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - pheli_network
+    depends_on:
+      - db
+      - redis
+
+  # Nginx Service
+  webserver:
+    image: nginx:alpine
+    container_name: pheli_webserver
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/var/www/html
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+    networks:
+      - pheli_network
+    depends_on:
+      - app
+
+  # MySQL Service
+  db:
+    image: mysql:8.0
+    container_name: pheli_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-pheli}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root_password}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-password}
+      MYSQL_USER: ${DB_USERNAME:-pheli_user}
+    volumes:
+      - dbdata:/var/lib/mysql
+      - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
+    ports:
+      - "3307:3306"
+    networks:
+      - pheli_network
+
+  # phpMyAdmin Service
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: pheli_phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root_password}
+    ports:
+      - "8080:80"
+    networks:
+      - pheli_network
+    depends_on:
+      - db
+
+  # Redis Service
+  redis:
+    image: redis:alpine
+    container_name: pheli_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - pheli_network
+    command: redis-server --appendonly yes
+    volumes:
+      - redisdata:/data
+
+# Docker Networks
+networks:
+  pheli_network:
+    driver: bridge
+
+# Volumes
+volumes:
+  dbdata:
+    driver: local
+  redisdata:
+    driver: local
