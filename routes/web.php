@@ -13,6 +13,17 @@ use App\Http\Controllers\CompanyProfileController;
 // Homepage
 Route::get('/', [HomeController::class, 'index'])->name('index');
 
+// Test route
+Route::get('/test-images', function() {
+    $post = \App\Models\Post::first();
+    return response()->json([
+        'images_raw' => $post->images,
+        'is_array' => is_array($post->images),
+        'count' => is_array($post->images) ? count($post->images) : 0,
+        'first_image' => is_array($post->images) && count($post->images) > 0 ? $post->images[0] : null,
+        'full_url' => is_array($post->images) && count($post->images) > 0 ? asset('storage/' . $post->images[0]) : null,
+    ]);
+});
 
 // Public routes (không cần đăng nhập)
 Route::get('/posts', [PostController::class, 'index'])->name('posts.index');
@@ -36,6 +47,11 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // Password Reset Routes
 Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('password.request');
 Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->name('password.email');
+
+// MoMo Return URL and Callback (no auth required - MoMo redirects here)
+Route::get('/momo/payment/return', [\App\Http\Controllers\MomoPaymentController::class, 'returnUrl'])->name('momo.payment.return');
+Route::post('/momo/callback', [\App\Http\Controllers\MomoPaymentController::class, 'callback'])->name('momo.callback');
+
 
 // Protected Routes
 Route::middleware('auth')->group(function () {
@@ -111,7 +127,12 @@ Route::middleware('auth')->group(function () {
 
     // Order Routes (except delivery_staff)
     Route::middleware('role:waste_company,scrap_dealer,recycling_plant')->group(function () {
-        Route::resource('orders', \App\Http\Controllers\OrderController::class);
+        Route::resource('orders', \App\Http\Controllers\OrderController::class)->except(['show']);
+    });
+
+    // MoMo Payment Routes
+    Route::middleware('role:waste_company,scrap_dealer,recycling_plant')->group(function () {
+        Route::post('/momo/payment/create', [\App\Http\Controllers\MomoPaymentController::class, 'createPayment'])->name('momo.payment.create');
     });
 
     // Sales Management Routes (for sellers except delivery_staff)

@@ -13,14 +13,74 @@ class ScrapDealerController extends Controller
     public function dashboard()
     {
         $user = Auth::user();
-        $myPosts = Post::where('user_id', $user->id)->latest()->limit(5)->get();
-        $myTransactions = Transaction::where('seller_id', $user->id)
+
+        // Thống kê tổng quát
+        $totalPosts = Post::where('user_id', $user->id)->count();
+        $activePosts = Post::where('user_id', $user->id)->where('status', 'active')->count();
+        $totalTransactions = Transaction::where('seller_id', $user->id)
             ->orWhere('buyer_id', $user->id)
+            ->count();
+
+        // Tính tổng giá trị giao dịch
+        $totalRevenue = Transaction::where('seller_id', $user->id)
+            ->where('status', 'completed')
+            ->sum('total_amount');
+
+        // Số đánh giá
+        $totalReviews = \App\Models\Review::whereHas('post', function($query) use ($user) {
+            $query->where('user_id', $user->id);
+        })->count();
+
+        // Điểm trung bình
+        $averageRating = \App\Models\Review::whereHas('post', function($query) use ($user) {
+            $query->where('user_id', $user->id);
+        })->avg('rating');
+
+        // Bài đăng gần đây
+        $myPosts = Post::where('user_id', $user->id)
+            ->with(['wasteType', 'collectionPoint'])
             ->latest()
             ->limit(5)
             ->get();
 
-        return view('scrap-dealer.dashboard', compact('myPosts', 'myTransactions'));
+        // Giao dịch gần đây
+        $myTransactions = Transaction::where('seller_id', $user->id)
+            ->orWhere('buyer_id', $user->id)
+            ->with(['seller', 'buyer', 'post'])
+            ->latest()
+            ->limit(5)
+            ->get();
+
+        // Thống kê theo loại phế liệu
+        $postsByWasteType = Post::where('user_id', $user->id)
+            ->select('waste_type_id', \DB::raw('count(*) as total'))
+            ->groupBy('waste_type_id')
+            ->with('wasteType')
+            ->get();
+
+        // Thống kê theo tháng (6 tháng gần đây)
+        $monthlyPosts = Post::where('user_id', $user->id)
+            ->where('created_at', '>=', now()->subMonths(6))
+            ->select(
+                \DB::raw('DATE_FORMAT(created_at, "%Y-%m") as month'),
+                \DB::raw('count(*) as total')
+            )
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get();
+
+        return view('scrap-dealer.dashboard', compact(
+            'myPosts',
+            'myTransactions',
+            'totalPosts',
+            'activePosts',
+            'totalTransactions',
+            'totalRevenue',
+            'totalReviews',
+            'averageRating',
+            'postsByWasteType',
+            'monthlyPosts'
+        ));
     }
 
     public function posts()

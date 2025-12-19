@@ -35,7 +35,7 @@
                   <h1 class="display-4 mt-0 font-weight-bold text-shadow">Biến phế liệu thành giá trị
                   </h1>
                </div>
-               <form method="GET" action="{{ route('index') }}">
+               <form method="GET" action="{{ route('posts.index') }}">
                   <div class="row no-gutters">
                      <div class="col-md-4">
                         <div class="input-group">
@@ -137,52 +137,6 @@
          </div>
         </section>
       <!-- End Main Slider With Form -->
-
-      <!-- Search Results -->
-      @if($posts->count() > 0)
-      <section class="section-padding bg-light">
-         <div class="container">
-            <div class="section-title text-center mb-5">
-               <h2>Kết quả tìm kiếm</h2>
-               <p>Tìm thấy {{ $posts->count() }} bài đăng phù hợp</p>
-            </div>
-            <div class="row">
-               @foreach($posts as $post)
-               <div class="col-md-6 col-lg-4 mb-4">
-                  <div class="card h-100">
-                     <div class="card-header">
-                        <span class="badge {{ $post->type == 'doanh_nghiep_xanh' ? 'bg-success' : 'bg-primary' }}">
-                           {{ $post->type == 'doanh_nghiep_xanh' ? 'DOANH NGHIỆP XANH' : 'CƠ SỞ PHẾ LIỆU' }}
-                        </span>
-                        <small class="float-right text-muted">{{ $post->created_at->diffForHumans() }}</small>
-                     </div>
-                     <div class="card-body">
-                        <h5 class="card-title">{{ $post->title }}</h5>
-                        <p class="card-text">{{ Str::limit($post->description, 100) }}</p>
-                        <div class="row mb-3">
-                           <div class="col-6">
-                              <strong>Loại:</strong><br>
-                              <span class="text-primary">{{ $post->wasteType->name }}</span>
-                           </div>
-                           <div class="col-6">
-                              <strong>Số lượng:</strong><br>
-                              {{ number_format($post->quantity) }} {{ $post->wasteType->unit }}
-                           </div>
-                        </div>
-                        <div class="text-center">
-                           <span class="h5 text-success">
-                              {{ number_format($post->price) }} VNĐ/{{ $post->wasteType->unit }}
-                           </span>
-                        </div>
-                     </div>
-                  </div>
-               </div>
-               @endforeach
-            </div>
-         </div>
-      </section>
-      @endif
-      <!-- End Search Results -->
       <!-- Properties by City -->
       <section class="section-padding bg-white">
          <div class="section-title text-center mb-5">
@@ -193,7 +147,7 @@
             <div class="row">
                <div class="col-lg-3">
                   <div class="card bg-dark text-white card-overlay">
-                     <a href="{{ route('index', ['province' => 'Hà Nội']) }}">
+                     <a href="{{ route('posts.index', ['province' => 'Hà Nội']) }}">
                         <img class="card-img"  src="{{ asset('img/city/Hanoi.png') }}" alt="Card image">
                         <div class="card-img-overlay">
                            <h3 class="card-title text-white">Hà Nội</h3>
@@ -204,7 +158,7 @@
                </div>
                <div class="col-lg-3">
                   <div class="card bg-dark text-white card-overlay">
-                     <a href="{{ route('index', ['province' => 'Đà Nẵng']) }}">
+                     <a href="{{ route('posts.index', ['province' => 'Đà Nẵng']) }}">
                         <img class="card-img"  src="{{ asset('img/city/DaNang.jpg') }}" alt="Card image">
                         <div class="card-img-overlay">
                            <h3 class="card-title text-white">Đà Nẵng</h3>
@@ -215,7 +169,7 @@
                </div>
                <div class="col-lg-3">
                   <div class="card bg-dark text-white card-overlay">
-                     <a href="{{ route('index', ['province' => 'Bình Định']) }}">
+                     <a href="{{ route('posts.index', ['province' => 'Bình Định']) }}">
                         <img class="card-img"  src="{{ asset('img/city/Binh_Dinh.jpg') }}" alt="Card image">
                         <div class="card-img-overlay">
                            <h3 class="card-title text-white">Bình Định</h3>
@@ -226,7 +180,7 @@
                </div>
                <div class="col-lg-3">
                   <div class="card bg-dark text-white card-overlay">
-                     <a href="{{ route('index', ['province' => 'TP Hồ Chí Minh']) }}">
+                     <a href="{{ route('posts.index', ['province' => 'TP Hồ Chí Minh']) }}">
                         <img class="card-img"  src="{{ asset('img/city/TPHCM.jpg') }}" alt="Card image">
                         <div class="card-img-overlay">
                            <h3 class="card-title text-white">TP.HCM</h3>
@@ -247,15 +201,33 @@
          </div>
          <div class="container">
             <div class="row">
-               @foreach($currentPrices->take(6) as $priceTable)
-               <div class="col-lg-4 col-md-4">
+               @foreach($currentPrices->take(12) as $priceTable)
+               <div class="col-lg-4 col-md-4 mb-4">
                   <div class="card card-list">
-                     <a href="{{ route('index', ['waste_category' => $priceTable->wasteType->name]) }}">
-                        <div class="scrap-img-wrap">
-                           <img class="card-img-top"  src="{{ asset('img/scrap/' . $priceTable->wasteType->name . '.jpg') }}"
-                                alt="{{ $priceTable->wasteType->name }}"
-                                onerror="this.src='{{ asset('img/scrap/default.jpg') }}'">
-                        </div>
+                     <a href="{{ route('posts.index', ['waste_type_id' => $priceTable->waste_type_id]) }}">
+                        @php
+                           // Chuẩn hóa tên file: bỏ dấu, viết hoa chữ cái đầu, bỏ khoảng trắng
+                           $fileName = str_replace(' ', '', ucfirst(strtolower($priceTable->wasteType->name)));
+                           // Mapping tên file đặc biệt
+                           $fileMapping = [
+                              'Caosu' => 'Caosu',
+                              'Chì' => 'Chi',
+                              'Đồng' => 'Dong',
+                              'Giấy' => 'Giay',
+                              'Hợpkim' => 'Hopkim',
+                              'Kẽm' => 'Kem',
+                              'Thiếc' => 'Thiec',
+                              'Sắt' => 'Sat',
+                              'Nhôm' => 'Nhom',
+                              'Nhựa' => 'Nhua',
+                           ];
+                           $imageFileName = $fileMapping[$fileName] ?? $fileName;
+                        @endphp
+                        <img class="card-img-top"
+                             src="{{ asset('img/scrap/' . $imageFileName . '.jpg') }}"
+                             alt="{{ $priceTable->wasteType->name }}"
+                             style="height: 200px; object-fit: cover;"
+                             onerror="this.src='{{ asset('img/scrap/default.jpg') }}'">
                         <div class="card-body text-center">
                            <h5 class="card-title mb-2">{{ $priceTable->wasteType->name }}</h5>
                            <div class="scrap-price-block mb-2">
@@ -282,27 +254,6 @@
          </div>
       </section>
       <!-- End Properties List -->
-      <!-- Plans -->
-      <section class="section-padding">
-         <div class="section-title text-center mb-5">
-            <h2>Danh mục phế liệu</h2>
-            <p>Chọn loại phế liệu bạn quan tâm:</p>
-         </div>
-         <div class="container">
-            <div class="row justify-content-center">
-               <div class="col-12">
-                  <div class="scrap-materials-grid">
-                     @foreach($wasteTypes as $wasteType)
-                        <a href="{{ route('index', ['waste_category' => $wasteType->name]) }}" class="scrap-btn">
-                           {{ $wasteType->name }}
-                        </a>
-                     @endforeach
-                  </div>
-               </div>
-            </div>
-         </div>
-      </section>
-      <!-- End Plans -->
 
       <!-- Recent Posts -->
       <section class="section-padding bg-light">
@@ -313,44 +264,82 @@
          <div class="container">
             <div class="row">
                @foreach($recentPosts as $post)
-               <div class="col-md-6 col-lg-4 mb-4">
-                  <div class="card h-100">
-                     <div class="card-header">
-                        <span class="badge {{ $post->type == 'doanh_nghiep_xanh' ? 'bg-success' : 'bg-primary' }}">
-                           {{ $post->type == 'doanh_nghiep_xanh' ? 'DOANH NGHIỆP XANH' : 'CƠ SỞ PHẾ LIỆU' }}
+               <div class="col-lg-4 col-md-6 mb-4">
+                  <div class="card card-list">
+                     <a href="{{ route('posts.show', $post) }}">
+                        <span class="badge {{ $post->type == 'co_so_phe_lieu' ? 'badge-danger' : 'badge-success' }}">
+                           {{ $post->type == 'co_so_phe_lieu' ? 'Cơ sở phế liệu' : 'Doanh nghiệp xanh' }}
                         </span>
-                        <small class="float-right text-muted">{{ $post->created_at->diffForHumans() }}</small>
-                     </div>
-                     <div class="card-body">
-                        <h5 class="card-title">{{ $post->title }}</h5>
-                        <p class="card-text">{{ Str::limit($post->description, 80) }}</p>
-                        <div class="row mb-2">
-                           <div class="col-6">
-                              <small><strong>Loại:</strong></small><br>
-                              <span class="text-primary">{{ $post->wasteType->name }}</span>
-                           </div>
-                           <div class="col-6">
-                              <small><strong>Số lượng:</strong></small><br>
-                              {{ number_format($post->quantity) }} {{ $post->wasteType->unit }}
-                           </div>
-                        </div>
-                        <div class="text-center mb-2">
-                           <span class="h6 text-success">
-                              {{ number_format($post->price) }} VNĐ/{{ $post->wasteType->unit }}
-                           </span>
-                        </div>
-                        @if($post->location)
-                           <small class="text-muted">
-                              <i class="mdi mdi-map-marker"></i> {{ $post->location }}
-                           </small>
+
+                        @php
+                            $images = is_string($post->images) ? json_decode($post->images, true) : $post->images;
+                        @endphp
+                        @if($images && is_array($images) && count($images) > 0)
+                           <img class="card-img-top"
+                                src="{{ asset('storage/' . $images[0]) }}"
+                                alt="{{ $post->title }}"
+                                style="height: 250px; object-fit: cover;">
+                        @else
+                           <img class="card-img-top"
+                                src="{{ asset('img/scrap/default.jpg') }}"
+                                alt="{{ $post->title }}"
+                                style="height: 250px; object-fit: cover;">
                         @endif
-                     </div>
-                     <div class="card-footer">
-                        <small class="text-muted">
-                           Đăng bởi: {{ $post->user->name }}
-                           <span class="badge badge-secondary">{{ ucfirst(str_replace('_', ' ', $post->user->role)) }}</span>
-                        </small>
-                     </div>
+
+                        <div class="card-body">
+                           <h5 class="card-title" style="height: 3em; line-height: 1.5em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">{{ $post->title }}</h5>
+                           <h6 class="card-subtitle mb-2 text-muted">
+                              <i class="mdi mdi-home-map-marker"></i>
+                              @if($post->collectionPoint)
+                                 {{ $post->collectionPoint->district ?? 'Chưa xác định' }}, {{ $post->collectionPoint->province ?? 'Chưa xác định' }}
+                              @else
+                                 Chưa có địa chỉ
+                              @endif
+                           </h6>
+                           <h2 class="text-success mb-0 mt-3">
+                              {{ number_format($post->price, 0, ',', '.') }} <small>VNĐ/kg</small>
+                           </h2>
+                           <div class="mt-2">
+                              <p class="mt-2 mb-0" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                 {{ Str::limit($post->description, 80) }}
+                              </p>
+                              <span class="d-block">
+                                 <i class="mdi mdi-cube"></i> Loại phế liệu: <strong>{{ $post->wasteType->name }}</strong>
+                              </span>
+                              <span class="d-block">
+                                 <i class="mdi mdi-scale"></i> Số lượng: <strong>{{ $post->quantity }} kg</strong>
+                              </span>
+                           </div>
+                        </div>
+                        <div class="card-footer">
+                           <div class="d-flex align-items-center justify-content-between">
+                              <div class="d-flex align-items-center" style="flex: 1; min-width: 0; margin-right: 10px;">
+                                 @if($post->user->company_logo)
+                                    <img src="{{ asset('storage/' . $post->user->company_logo) }}"
+                                         alt="{{ $post->user->company_name }}"
+                                         class="rounded-circle mr-2"
+                                         style="width: 40px; height: 40px; object-fit: cover; flex-shrink: 0;">
+                                 @else
+                                    <div class="rounded-circle mr-2 d-flex align-items-center justify-content-center"
+                                         style="width: 40px; height: 40px; background-color: #28a745; color: white; font-weight: bold; font-size: 16px; flex-shrink: 0;">
+                                       {{ strtoupper(substr($post->user->company_name, 0, 1)) }}
+                                    </div>
+                                 @endif
+                                 <span style="font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    <strong>{{ $post->user->company_name }}</strong>
+                                 </span>
+                              </div>
+                              <div class="d-flex align-items-center" style="gap: 12px; flex-shrink: 0;">
+                                 <a href="#" class="text-dark" onclick="event.preventDefault(); event.stopPropagation(); addToWishlist({{ $post->id }});" title="Thêm vào yêu thích">
+                                    <i class="far fa-heart" style="font-size: 24px;"></i>
+                                 </a>
+                                 <a href="#" class="text-dark" onclick="event.preventDefault(); event.stopPropagation(); addToCart({{ $post->id }});" title="Thêm vào giỏ hàng">
+                                    <i class="fas fa-shopping-bag" style="font-size: 24px;"></i>
+                                 </a>
+                              </div>
+                           </div>
+                        </div>
+                     </a>
                   </div>
                </div>
                @endforeach
@@ -427,17 +416,6 @@
 
 @section('custom-js')
 <script>
-// Custom functionality for waste category links
-document.querySelectorAll('.scrap-btn').forEach(function(btn) {
-   btn.addEventListener('click', function(e) {
-      if (!this.getAttribute('href')) {
-         e.preventDefault();
-         const wasteType = this.textContent.trim();
-         window.location.href = `{{ route('index') }}?waste_category=${encodeURIComponent(wasteType)}`;
-      }
-   });
-});
-
 // Auto-submit search form when province or waste category changes
 document.querySelectorAll('select[name="province"], select[name="waste_category"]').forEach(function(select) {
    select.addEventListener('change', function() {
@@ -452,5 +430,13 @@ document.querySelectorAll('select[name="province"], select[name="waste_category"
 function clearSearch() {
    window.location.href = '{{ route("index") }}';
 }
+
+// Thêm vào danh sách yêu thích
+function addToWishlist(postId) {
+    console.log('Thêm bài đăng ' + postId + ' vào danh sách yêu thích');
+    alert('Chức năng thêm vào yêu thích đang được phát triển');
+}
+
+// Lưu ý: addToCart đã được định nghĩa global trong header.blade.php
 </script>
 @endsection

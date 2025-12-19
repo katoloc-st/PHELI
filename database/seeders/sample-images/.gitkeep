@@ -1,0 +1,11 @@
+# Folder này chứa ảnh mẫu để seed database
+# Cấu trúc thư mục:
+#   - avatars/       : Ảnh đại diện người dùng
+#   - company-logos/ : Logo công ty
+#   - posts/         : Ảnh bài đăng phế liệu
+#
+# Đặt các file ảnh mẫu vào đúng thư mục con (jpg, png, etc.)
+# Ví dụ:
+#   avatars/user1.jpg, avatars/user2.jpg
+#   company-logos/company1.png, company-logos/company2.png
+#   posts/plastic.jpg, posts/paper.jpg, posts/metal.jpg

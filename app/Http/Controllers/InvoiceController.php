@@ -16,7 +16,7 @@ class InvoiceController extends Controller
         $orders = Order::where('user_id', Auth::id())
             ->with(['items.post.wasteType', 'items.post.user'])
             ->orderBy('created_at', 'desc')
-            ->paginate(10);
+            ->paginate(4);
 
         return view('invoice.index', compact('orders'));
     }

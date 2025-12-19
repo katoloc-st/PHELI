@@ -7,6 +7,8 @@
     let currentPopup;
     let popupFromClick = false; // Track if popup was created from marker click
     let activeMarker = null; // Track the currently active marker
+    let lastHoveredPropertyId = null; // Track last hovered property to prevent re-animation
+    let currentPopupPropertyId = null; // Track which property the current popup belongs to
 
     // Default properties for fallback - Vietnam coordinates
     const defaultProperties = [
@@ -225,38 +227,102 @@
     }
 
     function setupPropertyInteractions(properties) {
-        $(".card-house, .card-list").on("mouseover", function () {
+        $(".card-house, .card-list").on("mouseenter", function (e) {
             const propertyId = $(this).data('property-id');
             const property = properties.find(p => p.id == propertyId);
-            if (property && !popupFromClick) {
-                // Show popup and zoom to marker on hover
-                createPopup(property);
-                jumpToProperty(property);
+
+            if (!property || popupFromClick) {
+                return;
             }
+
+            // If hovering the same property, do absolutely nothing
+            if (lastHoveredPropertyId === propertyId) {
+                return;
+            }
+
+            // Update last hovered property
+            lastHoveredPropertyId = propertyId;
+
+            // Remove active class from all markers first
+            properties.forEach(p => {
+                if (p.markerElement) {
+                    p.markerElement.classList.remove('active');
+                }
+            });
+
+            // Add active class to current marker
+            if (property.markerElement) {
+                property.markerElement.classList.add('active');
+            }
+
+            // Jump to property first (instant, no jitter)
+            jumpToProperty(property);
+
+            // Then create popup (after jump complete)
+            setTimeout(() => {
+                createPopup(property);
+            }, 50);
         });
 
-        $(".card-house, .card-list").on("mouseout", function () {
-            // Only remove popup on mouseout if it wasn't created from marker click
+        // Reset when mouse leaves the entire posts list container
+        $("#posts-list-container").on("mouseleave", function(e) {
             if (currentPopup && !popupFromClick) {
                 currentPopup.remove();
                 currentPopup = null;
+                currentPopupPropertyId = null;
+            }
+
+            lastHoveredPropertyId = null;
+
+            // Remove all marker highlights if not clicked
+            if (!activeMarker) {
+                properties.forEach(p => {
+                    if (p.markerElement) {
+                        p.markerElement.classList.remove('active');
+                    }
+                });
             }
         });
     }
 
     function jumpToProperty(property) {
         if (map && property.coordinates) {
+            const currentCenter = map.getCenter();
+            const currentZoom = map.getZoom();
+            const targetLng = property.coordinates[0];
+            const targetLat = property.coordinates[1];
+
+            // Check if already at target position (with small tolerance)
+            const lngDiff = Math.abs(currentCenter.lng - targetLng);
+            const latDiff = Math.abs(currentCenter.lat - targetLat);
+            const zoomDiff = Math.abs(currentZoom - 15);
+
+            // If already at target position (within 0.0001 degrees and zoom 15), don't animate
+            if (lngDiff < 0.0001 && latDiff < 0.0001 && zoomDiff < 0.5) {
+                return; // Already there, no need to move
+            }
+
+            // Use flyTo with smooth animation
             map.flyTo({
                 center: property.coordinates,
                 zoom: 15,
+                speed: 1.5, // Faster than default
+                curve: 1, // Less curve = more direct path
                 essential: true
             });
         }
     }
 
     function createPopup(property) {
+        // If popup exists for the same property, don't recreate
+        if (currentPopup && currentPopupPropertyId === property.id) {
+            return;
+        }
+
+        // Remove old popup
         if (currentPopup) {
             currentPopup.remove();
+            currentPopup = null;
         }
 
         // Format price for display
@@ -301,10 +367,14 @@
             .setHTML(popupContent)
             .addTo(map);
 
+        // Track which property this popup belongs to
+        currentPopupPropertyId = property.id;
+
         // Reset flag and marker style when popup is closed
         currentPopup.on('close', function() {
             popupFromClick = false;
             currentPopup = null;
+            currentPopupPropertyId = null;
 
             // Remove active class from marker when popup closes
             if (activeMarker) {

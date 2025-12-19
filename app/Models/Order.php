@@ -29,6 +29,9 @@ class Order extends Model
         'payment_method',
         'voucher_id',
         'notes',
+        'payment_status',
+        'momo_order_id',
+        'momo_trans_id',
     ];
 
     protected $casts = [

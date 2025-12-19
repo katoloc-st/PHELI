@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             // Check if columns don't exist before adding them
+            if (!Schema::hasColumn('users', 'company_name')) {
+                $table->string('company_name')->nullable()->after('email');
+            }
             if (!Schema::hasColumn('users', 'company_address')) {
                 $table->string('company_address')->nullable()->after('company_name');
             }

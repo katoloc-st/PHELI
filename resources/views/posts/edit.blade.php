@@ -202,7 +202,8 @@
                      <!-- Quản lý ảnh (tối đa 3 ảnh) -->
                      <div class="row" id="imageManager">
                         @php
-                            $currentImages = $post->images ?? [];
+                            $currentImages = is_string($post->images) ? json_decode($post->images, true) : ($post->images ?? []);
+                            $currentImages = is_array($currentImages) ? $currentImages : [];
                             $maxImages = 3;
                             $remainingSlots = $maxImages - count($currentImages);
                         @endphp

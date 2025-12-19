@@ -485,8 +485,19 @@
 
       let html = '';
       data.items.forEach(item => {
-         const imageUrl = item.post.images && item.post.images.length > 0
-            ? '{{ asset('storage') }}/' + item.post.images[0]
+         // Decode images if it's a JSON string
+         let images = item.post.images;
+         if (typeof images === 'string') {
+            try {
+               images = JSON.parse(images);
+            } catch (e) {
+               images = [];
+            }
+         }
+         images = Array.isArray(images) ? images : [];
+
+         const imageUrl = images.length > 0
+            ? '{{ asset('storage') }}/' + images[0]
             : '{{ asset('img/list/1.png') }}';
 
          const canAdjustQty = !item.is_fixed_quantity;

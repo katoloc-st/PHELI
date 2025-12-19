@@ -15,6 +15,18 @@ class WasteTypeSeeder extends Seeder
     {
         $wasteTypes = [
             [
+                'name' => 'Thiếc',
+                'unit' => 'kg',
+                'description' => 'Thiếc phế liệu các loại',
+                'is_active' => true
+            ],
+            [
+                'name' => 'Hợp kim',
+                'unit' => 'kg',
+                'description' => 'Hợp kim phế liệu các loại',
+                'is_active' => true
+            ],
+            [
                 'name' => 'Sắt',
                 'unit' => 'kg',
                 'description' => 'Sắt thép phế liệu các loại',
@@ -42,6 +54,24 @@ class WasteTypeSeeder extends Seeder
                 'name' => 'Kẽm',
                 'unit' => 'kg',
                 'description' => 'Kẽm phế liệu các loại',
+                'is_active' => true
+            ],
+            [
+                'name' => 'Niken',
+                'unit' => 'kg',
+                'description' => 'Niken phế liệu các loại',
+                'is_active' => true
+            ],
+            [
+                'name' => 'Chì',
+                'unit' => 'kg',
+                'description' => 'Chì phế liệu các loại',
+                'is_active' => true
+            ],
+            [
+                'name' => 'Cao su',
+                'unit' => 'kg',
+                'description' => 'Cao su phế liệu các loại',
                 'is_active' => true
             ],
             [

@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
       <meta name="description" content="Webartinfo">
       <meta name="author" content="Webartinfo">
-      <title>LUCAS - Thu gom phế liệu online</title>
+      <title>PHELI - Thu gom phế liệu online</title>
       <!-- Favicon Icon -->
       <link rel="icon" type="image/png" href="{{ asset('img/favicon.png') }}">
       <!-- Bootstrap core CSS -->

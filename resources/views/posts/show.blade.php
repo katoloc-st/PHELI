@@ -6,14 +6,17 @@
       <!-- Property Single Slider header -->
       <section class="site-slider">
          <div id="siteslider" class="carousel slide" data-ride="carousel">
-            @if($post->images && count($post->images) > 0)
+            @php
+               $images = is_string($post->images) ? json_decode($post->images, true) : $post->images;
+            @endphp
+            @if($images && is_array($images) && count($images) > 0)
                <ol class="carousel-indicators">
-                  @foreach($post->images as $index => $image)
+                  @foreach($images as $index => $image)
                      <li data-target="#siteslider" data-slide-to="{{ $index }}" @if($index == 0) class="active" @endif></li>
                   @endforeach
                </ol>
                <div class="carousel-inner" role="listbox">
-                  @foreach($post->images as $index => $image)
+                  @foreach($images as $index => $image)
                      <div class="carousel-item @if($index == 0) active @endif" style="background-image: url('{{ asset('storage/' . $image) }}')"></div>
                   @endforeach
                </div>
@@ -80,14 +83,17 @@
                   <div class="card">
                      <div class="card-body site-slider pl-0 pr-0 pt-0 pb-0">
                         <div id="sitesliderz" class="carousel slide" data-ride="carousel">
-                           @if($post->images && count($post->images) > 0)
+                           @php
+                              $images = is_string($post->images) ? json_decode($post->images, true) : $post->images;
+                           @endphp
+                           @if($images && is_array($images) && count($images) > 0)
                               <ol class="carousel-indicators">
-                                 @foreach($post->images as $index => $image)
+                                 @foreach($images as $index => $image)
                                     <li data-target="#sitesliderz" data-slide-to="{{ $index }}" @if($index == 0) class="active" @endif></li>
                                  @endforeach
                               </ol>
                               <div class="carousel-inner" role="listbox">
-                                 @foreach($post->images as $index => $image)
+                                 @foreach($images as $index => $image)
                                     <div class="carousel-item @if($index == 0) active @endif rounded" style="background-image: url('{{ asset('storage/' . $image) }}')"></div>
                                  @endforeach
                               </div>
@@ -459,14 +465,17 @@
                            <a href="{{ route('posts.show', $linkedPost) }}">
                               <span class="badge badge-success">Đang bán</span>
 
-                              @if($linkedPost->images && count($linkedPost->images) > 0)
-                                 <img class="card-img-top" src="{{ asset('storage/' . $linkedPost->images[0]) }}" alt="{{ $linkedPost->title }}" style="height: 250px; object-fit: cover;">
+                              @php
+                                 $linkedImages = is_string($linkedPost->images) ? json_decode($linkedPost->images, true) : $linkedPost->images;
+                              @endphp
+                              @if($linkedImages && is_array($linkedImages) && count($linkedImages) > 0)
+                                 <img class="card-img-top" src="{{ asset('storage/' . $linkedImages[0]) }}" alt="{{ $linkedPost->title }}" style="height: 250px; object-fit: cover;">
                               @else
                                  <img class="card-img-top" src="{{ asset('img/list/1.png') }}" alt="{{ $linkedPost->title }}" style="height: 250px; object-fit: cover;">
                               @endif
 
                               <div class="card-body">
-                                 <h5 class="card-title">{{ $linkedPost->title }}</h5>
+                                 <h5 class="card-title" style="height: 3em; line-height: 1.5em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">{{ $linkedPost->title }}</h5>
                                  <h6 class="card-subtitle mb-2 text-muted">
                                     <i class="mdi mdi-home-map-marker"></i> {{ $linkedPost->collectionPoint->district }}, {{ $linkedPost->collectionPoint->province }}
                                  </h6>

@@ -73,7 +73,21 @@
                                           };
                                        @endphp
                                        <span class="badge {{ $badgeClass }}">{{ $statusText }}</span>
-                                       <img class="card-img-top" src="{{ asset('img/list/' . ($loop->index % 6 + 1) . '.png') }}" alt="{{ $post->title }}">
+
+                                       @php
+                                          $images = is_string($post->images) ? json_decode($post->images, true) : $post->images;
+                                       @endphp
+                                       @if($images && is_array($images) && count($images) > 0)
+                                          <img class="card-img-top"
+                                               src="{{ asset('storage/' . $images[0]) }}"
+                                               alt="{{ $post->title }}"
+                                               style="height: 250px; object-fit: cover;">
+                                       @else
+                                          <img class="card-img-top"
+                                               src="{{ asset('img/scrap/default.jpg') }}"
+                                               alt="{{ $post->title }}"
+                                               style="height: 250px; object-fit: cover;">
+                                       @endif
                                     </div>
                                     <div class="col-lg-7 col-md-7">
                                        <div class="card-body">

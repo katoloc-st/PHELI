@@ -1134,8 +1134,6 @@ function zoomToProvince(province) {
             if (marker) {
                marker.setLngLat([lng, lat]);
             }
-
-            console.log('Zoomed to province:', province);
          }
       })
       .catch(error => console.error('Province geocoding error:', error));
@@ -1168,8 +1166,6 @@ function zoomToDistrict(province, district) {
             if (marker) {
                marker.setLngLat([lng, lat]);
             }
-
-            console.log('Zoomed to district:', district);
          }
       })
       .catch(error => console.error('District geocoding error:', error));
@@ -1218,7 +1214,6 @@ function initializeMap() {
    map.addControl(geolocate, 'top-right');
 
    map.on('load', function() {
-      console.log('Checkout map loaded successfully');
 
       // Add marker
       marker = new mapboxgl.Marker({
@@ -1317,8 +1312,6 @@ function geocodeAddress(address) {
    if (province) searchQuery += `, ${province}`;
    searchQuery += ', Vietnam';
 
-   console.log('Geocoding address:', searchQuery);
-
    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery)}.json?access_token=${mapboxgl.accessToken}&country=VN&limit=1`;
 
    fetch(url)
@@ -1332,7 +1325,6 @@ function geocodeAddress(address) {
                zoom: 16,
                essential: true
             });
-            console.log('Found location:', data.features[0].place_name);
          } else {
             console.warn('No location found for:', searchQuery);
             alert('Không tìm thấy địa chỉ. Vui lòng kiểm tra lại thông tin.');
@@ -1351,13 +1343,11 @@ function reverseGeocode(lng, lat) {
       .then(data => {
          if (data.features && data.features.length > 0) {
             // Log tất cả features để xem
-            console.log('All features:', data.features);
 
             // Tìm feature có số nhà (address) trước, nếu không có thì lấy feature đầu tiên
             let feature = data.features.find(f => f.address) || data.features[0];
 
             // Log feature được chọn
-            console.log('Selected feature:', feature);
 
             // Cấu trúc địa chỉ từ Mapbox:
             // - feature.text: Tên đường hoặc địa điểm (VD: "Nguyễn Văn Quá")
@@ -1387,8 +1377,6 @@ function reverseGeocode(lng, lat) {
                }
             }
 
-            console.log('House number found:', houseNumber || 'No house number available');
-
             // 2. Tên đường - bỏ chữ "Đường" nếu có
             if (feature.text) {
                let streetName = feature.text;
@@ -1403,9 +1391,7 @@ function reverseGeocode(lng, lat) {
             let city = '';
 
             if (feature.context) {
-               console.log('Context items:', feature.context);
                feature.context.forEach(item => {
-                  console.log('Context item:', item.id, '->', item.text);
 
                   if (item.id.startsWith('neighborhood')) {
                      ward = item.text; // Phường/Xã (VD: "Đông Hưng Thuận")
@@ -1421,8 +1407,6 @@ function reverseGeocode(lng, lat) {
                   }
                });
             }
-
-            console.log('Extracted components:', { ward, district, city });
 
             // Build street address - CHỈ số nhà và tên đường (không có phường, quận, tỉnh)
             const streetAddress = addressParts.join(' ');
@@ -1492,14 +1476,6 @@ function reverseGeocode(lng, lat) {
                $('#ward').val(ward);
             }
 
-            console.log('Parsed Address:', {
-               address: feature.address,
-               street: feature.text,
-               ward: ward,
-               district: district,
-               city: city,
-               fullAddress: fullAddress
-            });
          }
       })
       .catch(error => console.error('Reverse geocoding error:', error));
@@ -1565,8 +1541,19 @@ function renderOrderItems(items, total) {
 
       // Render items for this seller
       group.items.forEach(item => {
-         const imageUrl = item.post.images && item.post.images.length > 0
-            ? '{{ asset('storage') }}/' + item.post.images[0]
+         // Decode images if it's a JSON string
+         let images = item.post.images;
+         if (typeof images === 'string') {
+            try {
+               images = JSON.parse(images);
+            } catch (e) {
+               images = [];
+            }
+         }
+         images = Array.isArray(images) ? images : [];
+
+         const imageUrl = images.length > 0
+            ? '{{ asset('storage') }}/' + images[0]
             : '{{ asset('img/list/1.png') }}';
 
          const totalPrice = item.post.price * item.quantity;
@@ -2283,9 +2270,6 @@ function updateShipping(sellerId) {
 $('#checkoutForm').on('submit', function(e) {
    e.preventDefault();
 
-   console.log('Form submit triggered');
-   console.log('window.orderData:', window.orderData);
-
    // Validate form
    const email = $('#email').val();
    const phone = $('#phone').val();
@@ -2454,8 +2438,6 @@ $('#checkoutForm').on('submit', function(e) {
    }
 
    // Debug: log order data
-   console.log('Order Data:', orderData);
-
    // Populate hidden field with order data
    $('#orderDataInput').val(JSON.stringify(orderData));
 
@@ -2463,8 +2445,50 @@ $('#checkoutForm').on('submit', function(e) {
    const $button = $('.complete-order-btn');
    $button.prop('disabled', true).html('<i class="mdi mdi-loading mdi-spin"></i> Đang xử lý...');
 
-   // Submit the form
-   this.submit();
+   // Check payment method
+   const paymentMethod = orderData.payment_method;
+
+   if (paymentMethod === 'momo') {
+      // Handle MoMo payment
+      $.ajax({
+         url: '{{ route("momo.payment.create") }}',
+         method: 'POST',
+         data: {
+            _token: '{{ csrf_token() }}',
+            order_data: JSON.stringify(orderData)
+         },
+         success: function(response) {
+            if (response.success) {
+               // Check if we should redirect directly to MoMo payment page
+               if (response.redirect_now && response.payment_url) {
+                  // Redirect directly to MoMo payment page
+                  window.location.href = response.payment_url;
+               } else {
+                  // Fallback: Redirect to our payment page
+                  window.location.href = response.payment_url;
+               }
+            } else {
+               $button.prop('disabled', false).html('<i class="mdi mdi-check-all"></i> Hoàn tất đơn hàng');
+               alert('Có lỗi xảy ra khi tạo thanh toán!');
+            }
+         },
+         error: function(xhr) {
+            $button.prop('disabled', false).html('<i class="mdi mdi-check-all"></i> Hoàn tất đơn hàng');
+
+            let errorMsg = 'Có lỗi xảy ra!';
+            if (xhr.responseJSON && xhr.responseJSON.error) {
+               errorMsg = xhr.responseJSON.error;
+            }
+
+            alert(errorMsg);
+         }
+      });
+
+      return false; // Prevent form submission
+   } else {
+      // Submit the form normally for COD or other methods
+      this.submit();
+   }
 });
 
 // Format number

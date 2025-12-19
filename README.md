@@ -190,6 +190,7 @@ docker-compose down
 ### Không dùng Docker
 ```bash
 # Chạy migration
+php artisan migrate:fresh --seed
 php artisan migrate
 
 # Chạy seeder
@@ -199,6 +200,7 @@ php artisan db:seed
 php artisan cache:clear
 php artisan config:clear
 php artisan view:clear
+php artisan route:clear
 ```
 
 ## Troubleshooting

@@ -28,7 +28,7 @@ class OrderController extends Controller
             $query->where('status', $request->status);
         }
 
-        $orderItems = $query->orderBy('created_at', 'desc')->paginate(10);
+        $orderItems = $query->orderBy('created_at', 'desc')->paginate(4);
 
         return view('orders.index', compact('orderItems'));
     }
@@ -100,7 +100,6 @@ class OrderController extends Controller
                 'grand_total' => $orderData['grand_total'],
                 'payment_method' => $orderData['payment_method'] ?? 'cod',
                 'voucher_id' => $voucherId,
-                'status' => 'pending',
             ]);
 
             // Create order items for each seller
@@ -191,7 +190,7 @@ class OrderController extends Controller
 
             DB::commit();
 
-            return redirect()->route('orders.show', $order->id)
+            return redirect()->route('orders.index')
                 ->with('success', 'Đặt hàng thành công! Mã đơn hàng: ' . $order->order_number);
 
         } catch (\Exception $e) {
@@ -381,6 +380,11 @@ class OrderController extends Controller
             $orderItem->cancelled_at = now();
         }
 
+        // Tích điểm Green Score khi order item hoàn thành
+        if ($request->status === 'completed') {
+            $this->addGreenScore($orderItem);
+        }
+
         $orderItem->save();
 
         // Recalculate order totals after item cancellation
@@ -442,6 +446,48 @@ class OrderController extends Controller
             'deposit_amount' => $newDeposit,
             'grand_total' => $newGrandTotal
         ]);
+    }
+
+    /**
+     * Tích điểm Green Score cho người bán khi hoàn thành đơn hàng
+     */
+    private function addGreenScore(OrderItem $orderItem)
+    {
+        // Hệ số điểm xanh cho từng loại phế liệu
+        $greenScoreCoefficients = [
+            'Cao su' => 3.2,
+            'Chì' => 5.0,
+            'Đồng' => 4.7,
+            'Giấy' => 4.0,
+            'Hợp kim' => 4.3,
+            'Inox' => 4.4,
+            'Kẽm' => 4.5,
+            'Nhôm' => 5.0,
+            'Nhựa' => 3.2,
+            'Niken' => 4.1,
+            'Sắt' => 4.2,
+            'Thiếc' => 4.3,
+        ];
+
+        // Lấy thông tin post và waste type
+        $post = $orderItem->post;
+        if (!$post || !$post->wasteType) {
+            return;
+        }
+
+        $wasteTypeName = $post->wasteType->name;
+        $coefficient = $greenScoreCoefficients[$wasteTypeName] ?? 3.0; // Default coefficient nếu không tìm thấy
+
+        // Tính điểm: khối lượng × hệ số
+        $points = $orderItem->quantity * $coefficient;
+
+        // Cộng điểm cho seller (chủ bài đăng)
+        $seller = $orderItem->seller;
+        if ($seller && $seller->role === 'waste_company') {
+            $seller->increment('green_score', $points);
+
+            Log::info("Green Score added: User {$seller->id} earned {$points} points for {$orderItem->quantity}kg of {$wasteTypeName}");
+        }
     }
 }
 

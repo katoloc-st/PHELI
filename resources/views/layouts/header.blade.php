@@ -1,9 +1,24 @@
 <header>
+         <style>
+            /* Style cho dropdown menu item active */
+            .dropdown-item.active,
+            .dropdown-item.active:hover,
+            .dropdown-item.active:focus {
+               background-color: #516AF0 !important;
+               color: white !important;
+            }
+
+            /* Style cho nav-link active ở menu chính - chỉ áp dụng cho navbar */
+            .navbar .nav-link.active {
+               color: #516AF0 !important;
+               font-weight: 600;
+            }
+         </style>
          <nav class="navbar navbar-expand-lg navbar-light bg-light" style="padding: 0;">
             <div class="container-fluid" style="padding-left: 180px; padding-right: 180px;">
                <!-- Logo - Bên trái -->
                <a class="navbar-brand text-success logo" href="{{ route('index') }}" style="margin-right: 0; padding: 20px 0;">
-                  <img class="img-fluid" src="{{ asset('img/logo.svg') }}" alt="" style="max-height: 55px;">
+                  <img src="{{ asset('img/logo.svg') }}" alt="" style="height: 40px; width: auto;">
                </a>
 
                <button class="navbar-toggler" type="button" data-toggle="collapse"
@@ -16,12 +31,12 @@
                   <!-- Menu chính - Giữa tuyệt đối -->
                   <ul class="navbar-nav" style="position: absolute; left: 50%; transform: translateX(-50%); z-index: 1000;">
                      <li class="nav-item">
-                        <a class="nav-link px-3 font-weight-medium" href="{{ route('index') }}" style="padding-top: 28px; padding-bottom: 28px; font-size: 15px;">
+                        <a class="nav-link px-3 font-weight-medium {{ Request::routeIs('index') ? 'active' : '' }}" href="{{ route('index') }}" style="padding-top: 28px; padding-bottom: 28px; font-size: 15px;">
                            Trang chủ
                         </a>
                      </li>
                      <li class="nav-item">
-                        <a class="nav-link px-3 font-weight-medium" href="{{ route('posts.index') }}" style="padding-top: 28px; padding-bottom: 28px; font-size: 15px;">
+                        <a class="nav-link px-3 font-weight-medium {{ Request::routeIs('posts.*') ? 'active' : '' }}" href="{{ route('posts.index') }}" style="padding-top: 28px; padding-bottom: 28px; font-size: 15px;">
                            Bài đăng
                         </a>
                      </li>
@@ -76,22 +91,44 @@
                            <span class="text-dark font-weight-medium ml-2" style="font-size: 15px;">{{ Auth::user()->name }}</span>
                         </a>
                         <div class="dropdown-menu dropdown-menu-right shadow" aria-labelledby="userDropdown">
-                           <a class="dropdown-item" href="{{ route('profile.show') }}">
+                           @if(Auth::check())
+                              @if(Auth::user()->role === 'waste_company')
+                                 <a class="dropdown-item {{ Request::routeIs('waste-company.dashboard') ? 'active' : '' }}" href="{{ route('waste-company.dashboard') }}">
+                                    <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                                 </a>
+                              @elseif(Auth::user()->role === 'scrap_dealer')
+                                 <a class="dropdown-item {{ Request::routeIs('scrap-dealer.dashboard') ? 'active' : '' }}" href="{{ route('scrap-dealer.dashboard') }}">
+                                    <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                                 </a>
+                              @elseif(Auth::user()->role === 'recycling_plant')
+                                 <a class="dropdown-item {{ Request::routeIs('recycling-plant.dashboard') ? 'active' : '' }}" href="{{ route('recycling-plant.dashboard') }}">
+                                    <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                                 </a>
+                              @endif
+                           @endif
+                           <a class="dropdown-item {{ Request::routeIs('profile.show') ? 'active' : '' }}" href="{{ route('profile.show') }}">
                               <i class="fas fa-user mr-2"></i>Hồ sơ cá nhân
                            </a>
-                           <a class="dropdown-item" href="{{ route('company-profile.show') }}">
-                              <i class="fas fa-building mr-2"></i>Thông tin công ty
-                           </a>
-                           <a class="dropdown-item" href="{{ route('collection-points.index') }}">
-                              <i class="fas fa-map-marker-alt mr-2"></i>Điểm tập kết
-                           </a>
-                           <a class="dropdown-item" href="{{ route('posts.my-posts') }}">
+                           @if(Auth::check() && Auth::user()->role !== 'delivery_staff')
+                           <a class="dropdown-item {{ Request::routeIs('posts.my-posts') ? 'active' : '' }}" href="{{ route('posts.my-posts') }}">
                               <i class="fas fa-list mr-2"></i>Bài đăng của tôi
                            </a>
-                           <div class="dropdown-divider"></div>
-                           <a class="dropdown-item" href="#">
-                              <i class="fas fa-cog mr-2"></i>Cài đặt
+                           <a class="dropdown-item {{ Request::routeIs('sales.*') ? 'active' : '' }}" href="{{ route('sales.index') }}">
+                              <i class="fas fa-store mr-2"></i>Quản lý yêu cầu mua hàng
                            </a>
+                           <a class="dropdown-item {{ Request::routeIs('orders.*') ? 'active' : '' }}" href="{{ route('orders.index') }}">
+                              <i class="fas fa-shopping-bag mr-2"></i>Đơn hàng của tôi
+                           </a>
+                           <a class="dropdown-item {{ Request::routeIs('invoice.*') ? 'active' : '' }}" href="{{ route('invoice.index') }}">
+                              <i class="fas fa-file-invoice mr-2"></i>Xuất hóa đơn
+                           </a>
+                           @endif
+                           @if(Auth::check() && Auth::user()->role === 'delivery_staff')
+                           <a class="dropdown-item {{ Request::routeIs('delivery.*') ? 'active' : '' }}" href="{{ route('delivery.index') }}">
+                              <i class="fas fa-truck mr-2"></i>Quản lý giao hàng
+                           </a>
+                           @endif
+                           <div class="dropdown-divider"></div>
                            <form method="POST" action="{{ route('logout') }}" style="display: inline;">
                               @csrf
                               <button type="submit" class="dropdown-item text-danger">

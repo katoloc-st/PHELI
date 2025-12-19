@@ -290,7 +290,7 @@ class PostController extends Controller
         $posts = Post::with(['wasteType', 'user'])
             ->where('user_id', Auth::id())
             ->latest()
-            ->paginate(10);
+            ->paginate(4);
 
         return view('my-posts', compact('posts'));
     }

@@ -1,0 +1,10 @@
+# Đặt logo công ty vào đây
+# Cấu trúc thư mục con:
+#   - scrap/      : Logo cơ sở phế liệu (scrap_dealer)
+#   - waste/      : Logo công ty xả rác (waste_company)
+#   - recycling/  : Logo nhà máy tái chế (recycling_plant)
+#
+# Ví dụ:
+#   scrap/scrap-logo1.png, scrap/scrap-logo2.jpg
+#   waste/waste-logo1.png, waste/waste-logo2.jpg
+#   recycling/recycle-logo1.png
