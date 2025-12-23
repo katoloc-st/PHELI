@@ -145,7 +145,12 @@ trait HasSampleImages
             $selected = [$selected];
         }
 
-        return json_encode($selected);
+        // Normalize paths to use forward slashes (for cross-platform compatibility)
+        $selected = array_map(function($path) {
+            return str_replace('\\', '/', $path);
+        }, $selected);
+
+        return json_encode($selected, JSON_UNESCAPED_SLASHES);
     }
 
     /**

@@ -273,9 +273,9 @@
         <!-- Header -->
         <div class="invoice-header">
             <div class="company-info">
-                <h1>PHELIEU</h1>
+                <h1>PHELI</h1>
                 <p>Hệ thống quản lý phế liệu</p>
-                <p>Email: support@phelieu.com</p>
+                <p>Email: support@pheli.com</p>
                 <p>Hotline: 1900-xxxx</p>
             </div>
             <div class="invoice-title">

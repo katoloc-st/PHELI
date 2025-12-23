@@ -129,10 +129,12 @@ php artisan migrate
 php artisan db:seed
 
 # Clear cache
-php artisan cache:clear
-php artisan config:clear
-php artisan view:clear
-php artisan route:clear
+php artisan cache:clear;
+php artisan config:clear;
+php artisan view:clear;
+php artisan route:clear;
+
+Remove-Item -Recurse -Force public\storage; php artisan storage:link
 ```
 
 ## Troubleshooting
